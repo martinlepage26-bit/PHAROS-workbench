@@ -8,25 +8,30 @@ Browser-openable HTML surfaces for the PHAROS method-formation corpus.
 |---------|--------|
 | Repo | public · `martinlepage26-bit/PHAROS-workbench` |
 | Pages | **enabled** · branch `main` · path `/` · HTTPS on · status `built` |
+| **First interface** | `pharos_dashboard.html` (also served as `index.html`) |
 | Hub homepage | https://martinlepage26-bit.github.io/PHAROS-workbench/ |
 | Topics | `pharos`, `workbench`, `method-formation`, `github-pages` |
-| Local checkout | `~/docs/PHAROS-workbench` |
+| Local / SMB | `~/docs/PHAROS-workbench` · `smb://100.102.190.26/martin-docs/PHAROS-workbench/` |
 
 ## Live URLs (GitHub Pages)
 
 | Surface | URL |
 |---------|-----|
-| Hub | https://martinlepage26-bit.github.io/PHAROS-workbench/ |
+| **First interface (dashboard)** | https://martinlepage26-bit.github.io/PHAROS-workbench/ |
+| Named dashboard | https://martinlepage26-bit.github.io/PHAROS-workbench/pharos_dashboard.html |
+| Method-formation card hub | https://martinlepage26-bit.github.io/PHAROS-workbench/files-hub.html |
 | Files | https://martinlepage26-bit.github.io/PHAROS-workbench/files/&lt;file&gt;.html |
 
 ## Layout
 
 ```text
 PHAROS-workbench/
-  index.html          # hub
-  files/              # standalone HTML artifacts
-  package/            # portable atlas markdown + manifest
-  .nojekyll           # serve paths as-is on GitHub Pages
+  index.html              # FIRST INTERFACE = pharos_dashboard
+  pharos_dashboard.html   # same dashboard (SMB / direct path)
+  files-hub.html          # method-formation card hub (secondary)
+  files/                  # standalone HTML artifacts
+  package/                # portable atlas markdown + manifest
+  .nojekyll
   README.md
 ```
 
