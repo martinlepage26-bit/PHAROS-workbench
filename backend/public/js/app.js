@@ -58,7 +58,7 @@ function loadLocalCache() {
 }
 
 function scheduleSave() {
-  setStatus("Saving…", "warn");
+  setStatus("Saving", "warn");
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     cacheLocal();
@@ -73,7 +73,8 @@ function closeModals() {
 }
 
 function openModal(id) {
-  closeModals();
+  // Close other modals only — do not clear editCtx (callers set it first).
+  document.querySelectorAll(".modal-bg").forEach((m) => m.classList.remove("open"));
   $(id)?.classList.add("open");
 }
 
