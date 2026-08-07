@@ -1,0 +1,1148 @@
+<title>Voice Operator Specs — Genealogy</title>
+<style>
+  :root {
+    --paper:#EEEFF3; --surface:#F8F9FB; --surface-2:#E7E9F0;
+    --ink:#171A21; --ink-2:#454A58; --muted:#6E7484;
+    --rule:#D5D8E2; --rule-2:#C2C6D4;
+    --accent:#3D4B8C; --accent-soft:#E2E5F2;
+    --ok:#2F6248; --ok-bg:#E0EBE4;
+    --warn:#7E6318; --warn-bg:#F0E9D6;
+    --bad:#8B3A3A; --bad-bg:#F1E1E1;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua","Hoefler Text",Georgia,serif;
+    --sans:"Segoe UI",-apple-system,BlinkMacSystemFont,system-ui,"Helvetica Neue",sans-serif;
+    --mono:"Cascadia Mono","Cascadia Code","JetBrains Mono",Consolas,"SF Mono",ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:#111319; --surface:#181B23; --surface-2:#1F2330;
+      --ink:#E3E5ED; --ink-2:#AAAFC0; --muted:#7E8496;
+      --rule:#282C38; --rule-2:#353A4A;
+      --accent:#8E9AD6; --accent-soft:#1E2334;
+      --ok:#7ABB97; --ok-bg:#1A2620;
+      --warn:#C9A854; --warn-bg:#262117;
+      --bad:#D48785; --bad-bg:#281B1B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#111319; --surface:#181B23; --surface-2:#1F2330;
+    --ink:#E3E5ED; --ink-2:#AAAFC0; --muted:#7E8496;
+    --rule:#282C38; --rule-2:#353A4A;
+    --accent:#8E9AD6; --accent-soft:#1E2334;
+    --ok:#7ABB97; --ok-bg:#1A2620;
+    --warn:#C9A854; --warn-bg:#262117;
+    --bad:#D48785; --bad-bg:#281B1B;
+  }
+  :root[data-theme="light"] {
+    --paper:#EEEFF3; --surface:#F8F9FB; --surface-2:#E7E9F0;
+    --ink:#171A21; --ink-2:#454A58; --muted:#6E7484;
+    --rule:#D5D8E2; --rule-2:#C2C6D4;
+    --accent:#3D4B8C; --accent-soft:#E2E5F2;
+    --ok:#2F6248; --ok-bg:#E0EBE4;
+    --warn:#7E6318; --warn-bg:#F0E9D6;
+    --bad:#8B3A3A; --bad-bg:#F1E1E1;
+  }
+
+  body {
+    background:var(--paper); color:var(--ink);
+    font-family:var(--sans); font-size:16px; line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .shell { max-width:1140px; margin:0 auto; padding:3.5rem 1.5rem 6rem; }
+  .prose { max-width:68ch; }
+
+  h1,h2,h3 { font-family:var(--serif); font-weight:600; text-wrap:balance; line-height:1.15; margin:0; }
+  h1 { font-size:clamp(2.1rem,5vw,3.1rem); letter-spacing:-0.015em; }
+  h2 { font-size:1.6rem; letter-spacing:-0.01em; }
+  h3 { font-size:1.12rem; }
+  p { margin:0; }
+
+  .eyebrow {
+    font-family:var(--mono); font-size:0.7rem; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--muted);
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead { display:flex; flex-direction:column; gap:1.1rem; padding-bottom:2rem; border-bottom:2px solid var(--ink); }
+  .lede { font-family:var(--serif); font-size:1.2rem; line-height:1.5; color:var(--ink-2); max-width:60ch; }
+
+  .scanstrip {
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:1px;
+    background:var(--rule); border:1px solid var(--rule); margin-top:0.6rem;
+  }
+  .scanstrip div { background:var(--surface); padding:0.7rem 0.85rem; display:flex; flex-direction:column; gap:0.28rem; }
+  .scanstrip dt { font-family:var(--mono); font-size:0.62rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); }
+  .scanstrip dd { font-family:var(--mono); font-size:0.8rem; color:var(--ink); margin:0; font-variant-numeric:tabular-nums; }
+
+  /* ---------- explainer ---------- */
+  .explainer { margin-top:3rem; padding-bottom:2.5rem; border-bottom:1px solid var(--rule); }
+  .explainer .inner { max-width:66ch; display:flex; flex-direction:column; gap:1.05rem; }
+  .explainer p { font-family:var(--serif); font-size:1.06rem; line-height:1.68; color:var(--ink-2); }
+  .explainer p.opening { color:var(--ink); }
+  .explainer p.opening::first-line { font-variant-caps:small-caps; letter-spacing:0.03em; }
+  .explainer h3 {
+    font-family:var(--mono); font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--accent); font-weight:400; margin-top:0.7rem;
+  }
+  .explainer code { font-family:var(--mono); font-size:0.86em; color:var(--ink); }
+
+  /* ---------- sections ---------- */
+  section { margin-top:3.5rem; }
+  .sechead { display:flex; align-items:baseline; gap:0.9rem; flex-wrap:wrap; margin-bottom:1.4rem; }
+  .sechead .num { font-family:var(--mono); font-size:0.72rem; color:var(--accent); letter-spacing:0.1em; }
+
+  /* ---------- chips ---------- */
+  .chip {
+    display:inline-flex; align-items:center; gap:0.35rem;
+    font-family:var(--mono); font-size:0.63rem; letter-spacing:0.09em; text-transform:uppercase;
+    padding:0.17rem 0.5rem; border:1px solid currentColor; white-space:nowrap;
+  }
+  .chip.direct { color:var(--ok); background:var(--ok-bg); }
+  .chip.supported { color:var(--warn); background:var(--warn-bg); }
+  .chip.thin { color:var(--bad); background:var(--bad-bg); }
+  .chip.track { color:var(--accent); background:var(--accent-soft); }
+  .chip.verbatim { color:var(--ok); background:var(--ok-bg); }
+  .chip.derived { color:var(--muted); background:var(--surface-2); }
+
+  .standfirst {
+    font-family:var(--serif); font-size:1.04rem; line-height:1.6; color:var(--ink-2);
+    max-width:66ch; margin-bottom:1.3rem;
+  }
+  .nodeid { font-family:var(--mono); font-size:0.73rem; color:var(--accent); white-space:nowrap; }
+  td.famcol { white-space:nowrap; font-family:var(--mono); font-size:0.7rem; color:var(--muted); }
+  .quoteline {
+    font-family:var(--serif); font-style:italic; color:var(--ink);
+    border-left:2px solid var(--rule-2); padding-left:0.85rem; margin:0.15rem 0;
+    font-size:0.94rem;
+  }
+  .pairgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:1px; background:var(--rule); border:1px solid var(--rule); }
+  .pairgrid > div { background:var(--surface); padding:0.95rem 1.1rem; display:flex; flex-direction:column; gap:0.5rem; }
+  .pairgrid .lbl { font-family:var(--mono); font-size:0.63rem; letter-spacing:0.11em; text-transform:uppercase; color:var(--muted); }
+  .pairgrid p { font-size:0.9rem; color:var(--ink-2); }
+
+  /* ---------- spine ---------- */
+  .spine { display:grid; grid-template-columns:7.5rem 1px 1fr; gap:0 1.6rem; }
+  .spine > .rail { background:var(--rule-2); grid-row:1 / -1; grid-column:2; }
+  .node { display:contents; }
+  .node .when {
+    grid-column:1; font-family:var(--mono); font-size:0.75rem; color:var(--muted);
+    text-align:right; padding-top:1.55rem; font-variant-numeric:tabular-nums; line-height:1.35;
+  }
+  .node .body { grid-column:3; padding:1.4rem 0 1.5rem; border-bottom:1px solid var(--rule); position:relative; }
+  .node:last-of-type .body { border-bottom:none; }
+  .node .body::before {
+    content:""; position:absolute; left:calc(-1.6rem - 4.5px); top:1.9rem;
+    width:9px; height:9px; background:var(--paper); border:2px solid var(--accent); border-radius:50%;
+  }
+  .node.gap .body::before { border-color:var(--bad); border-style:dotted; }
+  .node .title { display:flex; align-items:baseline; gap:0.7rem; flex-wrap:wrap; margin-bottom:0.45rem; }
+  .node .body p { color:var(--ink-2); max-width:64ch; font-size:0.95rem; }
+  .node .arts { display:flex; flex-direction:column; gap:0.2rem; margin-top:0.7rem; }
+  .node .arts code { font-family:var(--mono); font-size:0.74rem; color:var(--muted); word-break:break-all; }
+
+  /* ---------- tables ---------- */
+  .twrap { overflow-x:auto; border:1px solid var(--rule); background:var(--surface); }
+  table { border-collapse:collapse; width:100%; font-size:0.86rem; }
+  th, td { text-align:left; padding:0.55rem 0.8rem; border-bottom:1px solid var(--rule); vertical-align:top; }
+  thead th {
+    font-family:var(--mono); font-size:0.63rem; letter-spacing:0.1em; text-transform:uppercase;
+    color:var(--muted); background:var(--surface-2); border-bottom:1px solid var(--rule-2); white-space:nowrap;
+  }
+  tbody tr:last-child td { border-bottom:none; }
+  td.op { font-family:var(--mono); font-size:0.78rem; white-space:nowrap; }
+  td.mark { text-align:center; font-size:1rem; line-height:1.3; width:5.5rem; }
+  .m-full { color:var(--ok); }
+  .m-part { color:var(--warn); }
+  .m-none { color:var(--rule-2); }
+  td.num, th.num { font-variant-numeric:tabular-nums; white-space:nowrap; }
+  code.path { font-family:var(--mono); font-size:0.74rem; word-break:break-all; color:var(--ink-2); }
+  .hash { font-family:var(--mono); font-size:0.7rem; color:var(--muted); }
+
+  .legend { display:flex; gap:1.4rem; flex-wrap:wrap; margin-top:0.8rem; font-size:0.78rem; color:var(--muted); }
+  .legend span { display:inline-flex; align-items:center; gap:0.35rem; }
+
+  /* ---------- callouts ---------- */
+  .finding { border-left:3px solid var(--accent); background:var(--surface); padding:1.1rem 1.3rem; display:flex; flex-direction:column; gap:0.6rem; }
+  .finding h3 { font-family:var(--sans); font-size:0.98rem; font-weight:600; }
+  .finding p { font-size:0.92rem; color:var(--ink-2); max-width:66ch; }
+  .finding.alert { border-left-color:var(--bad); }
+
+  .stack { display:flex; flex-direction:column; gap:1rem; }
+  .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1rem; }
+
+  .fork { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1px; background:var(--rule); border:1px solid var(--rule); }
+  .fork > div { background:var(--surface); padding:1rem 1.1rem; display:flex; flex-direction:column; gap:0.4rem; }
+  .fork .lbl { font-family:var(--mono); font-size:0.66rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); }
+  .fork .val { font-family:var(--mono); font-size:0.78rem; word-break:break-all; }
+
+  footer { margin-top:4rem; padding-top:1.4rem; border-top:1px solid var(--rule); font-size:0.82rem; color:var(--muted); max-width:68ch; }
+  a { color:var(--accent); }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+</style>
+
+<div class="shell">
+
+  <header class="masthead">
+    <p class="eyebrow">EMERAULD × E: — provenance scan 2026-07-30</p>
+    <h1>Voice Operator Specs<br>A Genealogy</h1>
+    <p class="lede">Two distinct lineages travel under the same name. One is a set of prose-rewrite operators for your writing. The other is a governance containment layer. Both terminate in the Scholarly Paper Project OS. This traces them, maps each operator to the pipeline node it now governs, and names what is missing.</p>
+    <dl class="scanstrip">
+      <div><dt>Surfaces scanned</dt><dd>E:\ · EMERAULD (WSL)</dd></div>
+      <div><dt>EMERAULD snapshot</dt><dd>merge-20260729-210449</dd></div>
+      <div><dt>Canonical host</dt><dd>unreachable</dd></div>
+      <div><dt>Spec artifacts</dt><dd>11 primary</dd></div>
+      <div><dt>Operators traced</dt><dd>29</dd></div>
+      <div><dt>Domains ported to</dt><dd>5</dd></div>
+      <div><dt>Live agent roster</dt><dd>8</dd></div>
+      <div><dt>Keyport manuscript</dt><dd>76,699 words verified</dd></div>
+      <div><dt>GPTs dated to the second</dt><dd>5 of 6</dd></div>
+      <div><dt>Pipeline nodes mapped</dt><dd>16 of 16</dd></div>
+      <div><dt>Verbatim inheritances</dt><dd>11</dd></div>
+      <div><dt>Pipeline scaffold on disk</dt><dd>0 files</dd></div>
+      <div><dt>Unresolved gaps</dt><dd>3</dd></div>
+    </dl>
+  </header>
+
+  <div class="explainer">
+    <div class="inner">
+      <h3>What this traces</h3>
+
+      <p class="opening">Between February and April 2026 you built a system for writing in your own voice, then built a system for governing that system, then folded both into an agent architecture. The artifacts survived unevenly. Some are clean specifications; some are conversation transcripts that were treated as specifications afterwards. This genealogy separates the two.</p>
+
+      <p>The prose lineage starts in a single working session. <code>Martin Voice Spec v1.txt</code> is not a document that was authored and then revised — it is a 649-line transcript in which the voice was described, decomposed into named rewrite operators, and compressed, all in one pass. Everything downstream is a selection from it. v1.4 takes the compression and adds a bilingual switchboard and a disruption layer. The JSON <code>voice CODE</code> takes the operator names and makes them executable: regex for forbidden patterns, severity levels, degradation tests that fire when a rewrite flattens a both/and structure into an either/or. That is the only place new material enters, and only two operators — <code>SO-SEAM-PROTECT</code> and <code>SO-VOICE-DRIFT-REVERT</code> — both of which exist because a machine applying these rules can damage a text in ways a person applying them cannot.</p>
+
+      <p>The governance lineage runs alongside it and answers a different question. Not how a sentence should read, but what is allowed to count as settled. Voice Operator 1 marks the point where tone, evidence handling, and workflow stopped being implicit. DOTTIE follows as the adversarial layer that asks where documented governance becomes enforced governance. MOBI adds the self-polygraph: refuse to convert articulate self-description into proof. The Eight Sovereign Operators then formalise an authority lock — a claim propagates only if it is both actionable and defensible, against thresholds fixed before assessment — and that lock is what survives into HEPHAISTOS, Queen Keyport, Hermes, and Argus. The current three-agent stack is the eight operators, redistributed.</p>
+
+      <p>The two lineages meet once, on 2026-03-28, in the PHAROS Final Voice Operator. Seven layers fused into one deployable specification, and the place where the prose operators lose their names: <code>SCOPE-CLAMP</code> becomes “clamp scope to real actors and sites.” The instruction survives, the token does not. The Scholarly Paper Project OS is what sits downstream of that loss — sixteen nodes that execute these operators faithfully while naming almost none of them. Sections 5 and 6 restore the names.</p>
+
+      <p>What the genealogy is for is that audit, and three findings are load-bearing. HENRY is not a second voice; it is your voice code renamed, so any lineage counting it as a step counts one artifact twice. The operator vocabulary did not accumulate across versions — it was complete at the start and eroded afterwards, which makes later specs lossier rather than richer. And the pipeline’s one unenforceable rule, <em>do not collapse the author’s voice</em>, has an enforcement layer sitting unused in a file from February.</p>
+
+      <p>The evidence labels are not decorative. <em>Direct</em> means the file was opened and hashed in this session. <em>Supported</em> and <em>Thin</em> are inherited from your prior vault work and carry that work’s confidence unchanged. Where a claim rests on a document located but not opened, it says so.</p>
+    </div>
+  </div>
+
+  <section>
+    <div class="sechead"><span class="num">§1</span><h2>The name collision</h2></div>
+    <div class="stack">
+      <p class="prose" style="color:var(--ink-2)">Searching for “voice operator” returns two families that never shared a definition. Keeping them apart is the precondition for reading the rest of this genealogy.</p>
+      <div class="grid2">
+        <div class="finding">
+          <span class="chip track">Family A — prose operators</span>
+          <h3>Rewrite actions on sentences</h3>
+          <p><code class="path">CLAIM-EARLY</code>, <code class="path">SCOPE-CLAMP</code>, <code class="path">VERB-UPGRADE</code>. Named transformations applied to your drafts. Versioned v1 → v1.4 → JSON → v3 → v4.0. Authored by you with ChatGPT, February–March 2026.</p>
+        </div>
+        <div class="finding">
+          <span class="chip track">Family B — governance operators</span>
+          <h3>Containment layers on the system</h3>
+          <p><code class="path">Voice Operator 1</code>, <code class="path">VOICEOP2</code>, the Eight Sovereign Operators. Stages of governance authority, not text edits. These carry no rewrite rules at all.</p>
+        </div>
+      </div>
+      <div class="finding">
+        <span class="chip track">Instantiation track — not a third family</span>
+        <h3>Every operator ran as a GPT. The platform was the test bench.</h3>
+        <p>Agatha, Governess Agatha, Henry, Henry Scripto, Dot.cmd (DOTTIE), MOBI and HELIX were all built as custom GPTs. Author-confirmed, and it supersedes the file-based inference below. ChatGPT was not primarily a storefront here — it was the surface on which each operator was instantiated and stress-tested before the logic was pulled back into specs and skills.</p>
+        <p>This is a parallel track, not a third lineage. The operators do not change when they are deployed; they get exercised. Read a GPT name as evidence that a layer was <em>run</em>, not as another link in the chain.</p>
+      </div>
+      <div class="finding alert">
+        <h3>The bridge is asserted, not evidenced</h3>
+        <p>The vault’s <em>Stage Map</em> presents “First containment / Voice Operator 1” as an established stage. Its own upstream classification file says the opposite in plain language: <em>“Direct explicit file tokens <code class="path">AIGOV1</code> and <code class="path">Voice Operator 1</code> are not strongly present in this snapshot.”</em> The token was reconstructed by functional equivalence, then restated downstream without the hedge. Confidence rose across the chain while evidence did not.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><span class="num">§2</span><h2>Chronology</h2></div>
+    <div class="spine">
+      <div class="rail"></div>
+
+      <div class="node">
+        <div class="when">2026‑02‑17</div>
+        <div class="body">
+          <div class="title"><h3>MARTIN voice specs</h3><span class="chip direct">Direct</span><span class="chip track">Family A</span></div>
+          <p>Earliest surviving voice artifact on disk. PDF edition of the v1-family material, 85 KB. Predates every other spec file in the corpus.</p>
+          <div class="arts"><code>E:\MASTER PACK\MASTERxMASTERxMASTER\MARTIN voice specs.pdf</code></div>
+        </div>
+      </div>
+
+      <div class="node">
+        <div class="when">2026‑02‑21</div>
+        <div class="body">
+          <div class="title"><h3>Voice Spec v1.4 — 70/30 + Disruption Medium</h3><span class="chip direct">Direct</span><span class="chip track">Family A</span></div>
+          <p>The 8k-character build. Nineteen numbered sections, hard constraints (no em dashes, no sentence-initial “And”), a bilingual EN/FR switchboard, and a disruption layer that mandates inverting 2–3 structural components in every 6 units. Deployable as a single paste.</p>
+          <div class="arts"><code>E:\LIBRARY\Not_Mine\thesis\Martin Voice Spec v1.4 (7030 + Disruption Medium).txt</code></div>
+        </div>
+      </div>
+
+      <div class="node">
+        <div class="when">2026‑02‑24<br>→ 03‑01</div>
+        <div class="body">
+          <div class="title"><h3>Agatha, then Governess Agatha</h3><span class="chip supported">Supported</span><span class="chip track">Family B</span></div>
+          <p>The GPT identifier decodes to a creation time of 2026-02-18 01:41:28Z — one day after <code class="path">MARTIN voice specs.pdf</code>. The relational writing companion that the containment layers are later built to discipline. No standalone Agatha rule file survives; the rules are reconstructed from phase-analysis artifacts.</p>
+          <div class="arts"><code>g-699518c89a188191b8a7f08507e6e025-agatha</code></div>
+        </div>
+      </div>
+
+      <div class="node">
+        <div class="when">2026‑02‑28</div>
+        <div class="body">
+          <div class="title"><h3>Martin’s voice CODE — the machine layer</h3><span class="chip direct">Direct</span><span class="chip track">Family A</span></div>
+          <p>The prose spec becomes executable. JSON with typed operators (<code class="path">OP-*</code>), forbidden patterns as regex (<code class="path">FP-EM-DASH</code>), degradation tests (<code class="path">DG-GENERIC-SMOOTH</code>), and two safety operators found nowhere earlier: <code class="path">SO-SEAM-PROTECT</code> and <code class="path">SO-VOICE-DRIFT-REVERT</code>. Internal version field reads <code class="path">1.0</code>, independent of the v1/v3/v4 document series.</p>
+          <div class="arts"><code>E:\CODEX\paper.builder\Martin's voice CODE.txt</code></div>
+        </div>
+      </div>
+
+      <div class="node">
+        <div class="when">2026‑03‑08</div>
+        <div class="body">
+          <div class="title"><h3>HENRY voice CODE — the method goes to market</h3><span class="chip direct">Direct</span><span class="chip track">Product</span></div>
+          <p>Not a new voice. A byte-for-byte copy of Martin’s voice CODE with three name tokens substituted and line endings normalized. The rename is the packaging: Henry ships as a published PHAROS AI custom GPT with a three-mode adversarial review protocol. Same author, same operators, commercial name. See §4.</p>
+          <div class="arts"><code>E:\CODEX\HENRY\HENRY voice CODE.txt</code><code>g-69a4a9cf8d048191a10e75844c2c078b-henry — first seen 2026-03-01</code></div>
+        </div>
+      </div>
+
+      <div class="node">
+        <div class="when">2026‑03‑12</div>
+        <div class="body">
+          <div class="title"><h3>Dot.cmd — Voice Operator 2</h3><span class="chip supported">Supported</span><span class="chip track">Family B</span><span class="chip track">Ran as GPT</span></div>
+          <p>The adversarial claim-audit layer: separates governed artifact from proof of concept, asks where documented governance becomes enforced governance. This date is the <em>concept</em>. It was deployed on 2026-05-08 as <strong>Dot Matrix aka CMD.com</strong> — <em>“diagnosing hidden control logic, accountability failures, policy laundering, compliance theater, and governance drift.”</em> A browser sweep for “DOTTIE” returned nothing because the scan searched the persona name, not the deployed one.</p>
+          <div class="arts"><code>E:\MASTER PACK\MASTERxMASTERxMASTER\GROK+AGATAH=======Dottie qwjo do yo.txt</code></div>
+        </div>
+      </div>
+
+      <div class="node">
+        <div class="when">2026‑03‑20<br>→ 03‑21</div>
+        <div class="body">
+          <div class="title"><h3>MOBI / Mobius — self-polygraph</h3><span class="chip supported">Supported</span><span class="chip track">Family B</span><span class="chip track">Ran as GPT</span></div>
+          <p>Recursive truth-discipline: flag unsupported claims, refuse to convert articulate self-description into ontology. Concept date; deployed 2026-05-08 as <strong>Mobius Protocol</strong> — <em>“audits recursive prompts, separates evidence from inference, ranks interpretations, detects buffering or safety-reflex drift, preserves analytical stability under ambiguity pressure.”</em> Note what the deployed version added: <em>ranking</em> interpretations and detecting <em>safety-reflex</em> drift are not in the March traces.</p>
+          <div class="arts"><code>E:\MASTER PACK\POST-RECURS\...\Mobius-GPTExt-Think-Desktop-Super.txt</code></div>
+        </div>
+      </div>
+
+      <div class="node">
+        <div class="when">2026‑03‑24</div>
+        <div class="body">
+          <div class="title"><h3>AIGOV2 + VOICEOP2 canonized</h3><span class="chip supported">Supported</span><span class="chip track">Family B</span></div>
+          <p>The transition is named for the first time in a prompt handoff to Codex. The governance-revision manifest then binds the token to archive evidence by stage mapping, explicitly refusing to rename source files: <em>“do not rewrite source-file names or force synthetic token substitutions in raw evidence manifests.”</em> This is why no <code class="path">Martin Voice Spec v2</code> file exists — v2 is a manifest stage, never a document.</p>
+          <div class="arts"><code>E:\MASTER PACK\FINAL1gpt Prompt tp Codex.txt</code><code>E:\PHAROS METHOD REPOSITORY\...\02_GOVREV_NOTE_AIGOV2_VOICEOP2_EQUIVALENCE.md</code></div>
+        </div>
+      </div>
+
+      <div class="node">
+        <div class="when">2026‑03‑28</div>
+        <div class="body">
+          <div class="title"><h3>PHAROS Final Voice Operator</h3><span class="chip direct">Direct</span><span class="chip track">A + B</span></div>
+          <p>The two families are fused into one deployable Custom GPT specification. Seven declared layers: PHAROS method, Agatha authorship protection, Henry manuscript build, Dottie claim audit, Martin voice invariants, Mobius self-polygraph, skill meta-governance. The prose operators survive here demoted to unnamed defaults (“move claims earlier”, “clamp scope to real actors and sites”) rather than tokens.</p>
+          <div class="arts"><code>E:\MASTER PACK\LAST_VOICE_OPERATOR_GPT_CREATOR.md</code></div>
+        </div>
+      </div>
+
+      <div class="node">
+        <div class="when">2026‑04‑04</div>
+        <div class="body">
+          <div class="title"><h3>Level 0 canonical authority declared</h3><span class="chip direct">Direct</span><span class="chip track">Family B</span></div>
+          <p>The repository asserts a single root: <em>“canonical edits occur at Level 0 first; mirror references may appear downstream.”</em> The authority file itself is 418 bytes and contains no voice rules — it is a pointer, not a spec. The Level 2 mirror confirms it holds no content of its own.</p>
+          <div class="arts"><code>E:\PHAROS METHOD REPOSITORY\...\00_ROOT_VOICE_SPEC_V1_PRIMARY_IMPLEMENTATION.md</code></div>
+        </div>
+      </div>
+
+      <div class="node">
+        <div class="when">2026‑04‑18<br>(dated)</div>
+        <div class="body">
+          <div class="title"><h3>Eight Sovereign Operators</h3><span class="chip supported">Supported</span><span class="chip track">Family B</span></div>
+          <p>Signal Judgment, Control Interpretation, Structured Memory, Publication Transformation, Structure and Lineage Audit, System Mapping, Design Coherence, Skill Governance. Each self-contained, no handoffs. Introduces the authority lock: a claim propagates only if <em>actionable</em> AND <em>defensible</em>, against thresholds fixed before assessment.</p>
+          <div class="arts"><code>EMERAULD/Areas/PHAROS/Agatha Unified Skill System — Eight Sovereign Operators.md</code></div>
+        </div>
+      </div>
+
+      <div class="node">
+        <div class="when">2026‑04‑27</div>
+        <div class="body">
+          <div class="title"><h3>Translation to the three-agent stack</h3><span class="chip direct">Direct</span><span class="chip track">Family B</span></div>
+          <p>All eight operators are mapped into HEPHAISTOS, Queen Keyport, Hermes, and Argus. Four collapse into HEPHAISTOS scope; Skill Governance splits across Queen Keyport constraints and the Argus L99 drift audit. This is where Family B terminates in your current architecture.</p>
+          <div class="arts"><code>EMERAULD/Areas/PHAROS/Architecture Translation Guide — Eight Operators to Three-Agent Stack.md</code></div>
+        </div>
+      </div>
+
+      <div class="node">
+        <div class="when">2026‑05‑08</div>
+        <div class="body">
+          <div class="title"><h3>The May 8 batch — Scripto, Dot Matrix, Mobius Protocol</h3><span class="chip direct">Direct</span><span class="chip track">Instantiation</span></div>
+          <p>Three GPTs created inside twenty-four minutes: 19:49:57Z, 20:05:57Z, 20:13:30Z. One session in which the March operator set was rebuilt as running systems. No separate voice files exist because there were never separate voices — each is a persona binding on the same kernel. All of them are Martin Lepage.</p>
+          <div class="arts"><code>g-69fe3e65… Henry Scripto</code><code>g-69fe4225… Dot Matrix aka CMD.com</code><code>g-69fe43ea… Mobius Protocol</code></div>
+        </div>
+      </div>
+
+      <div class="node">
+        <div class="when">2026‑07‑30</div>
+        <div class="body">
+          <div class="title"><h3>Metadata resolution</h3><span class="chip direct">Direct</span></div>
+          <p>Recursive E: scan with hashes, zip-entry timestamps, 37 Codex session files and 21 browser-history databases. Establishes the rule that Windows CreationTime values around 2026-05-09 are copy/import times, not origin dates — without which the whole chronology reads six weeks late.</p>
+          <div class="arts"><code>EMERAULD/artifacts/voice-operator-lineage-2026-07-30/</code></div>
+        </div>
+      </div>
+
+      <div class="node">
+        <div class="when">live</div>
+        <div class="body">
+          <div class="title"><h3>Scholarly Paper Project OS</h3><span class="chip direct">Direct</span><span class="chip track">A + B</span></div>
+          <p>Sixteen nodes, four author gates, three finish states, one paper per week. The lineage’s terminus and its only currently executing form. Family A survives as the drafting rules inside nodes 02–14; Family B survives as the gate, marker, and handoff apparatus that governs them. Mapped in §5 and §6.</p>
+          <p>The Henry GPT closes the loop: its spec delegates heavy drafting to a skill named <code class="path">peer-reviewed-paper-writer</code> — the same name as a skill in the Claude environment. The operators now cross platforms by reference, not by copy.</p>
+          <div class="arts"><code>PROJECT_OS.md · ROUTINE_SPEC.md · MODEL_HANDOFF_LOG.md</code></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><span class="num">§3</span><h2>Operator inheritance</h2></div>
+    <p class="prose" style="color:var(--ink-2);margin-bottom:1.2rem">Every operator across the four artifacts I could read in full. Columns run left to right in time. The pattern that matters: <strong>nothing new enters after v1</strong> — later versions select, rename, and mechanize.</p>
+    <div class="twrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Operator</th>
+            <th class="mark">v1<br><span style="font-weight:400;text-transform:none;letter-spacing:0">02‑17</span></th>
+            <th class="mark">v1.4<br><span style="font-weight:400;text-transform:none;letter-spacing:0">02‑21</span></th>
+            <th class="mark">CODE<br><span style="font-weight:400;text-transform:none;letter-spacing:0">02‑28</span></th>
+            <th class="mark">Final<br><span style="font-weight:400;text-transform:none;letter-spacing:0">03‑28</span></th>
+            <th>Function</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="op">Thesis Lock</td><td class="mark m-full">●</td><td class="mark m-part">◐</td><td class="mark m-none">○</td><td class="mark m-part">◐</td><td>Governing claim inside first 20%</td></tr>
+          <tr><td class="op">CLAIM-EARLY</td><td class="mark m-full">●</td><td class="mark m-full">●</td><td class="mark m-full">●</td><td class="mark m-part">◐</td><td>Claim to sentence 1–2, spiral after</td></tr>
+          <tr><td class="op">SCOPE-CLAMP</td><td class="mark m-full">●</td><td class="mark m-full">●</td><td class="mark m-full">●</td><td class="mark m-part">◐</td><td>Universals → bounded actors + sites</td></tr>
+          <tr><td class="op">CLAIM-LADDER</td><td class="mark m-full">●</td><td class="mark m-part">◐</td><td class="mark m-full">●</td><td class="mark m-part">◐</td><td>Claim → mechanism → implication</td></tr>
+          <tr><td class="op">CONSEQUENCE-ANCHOR</td><td class="mark m-full">●</td><td class="mark m-full">●</td><td class="mark m-full">●</td><td class="mark m-part">◐</td><td>Name the consequence domain</td></tr>
+          <tr><td class="op">VERB-UPGRADE</td><td class="mark m-full">●</td><td class="mark m-full">●</td><td class="mark m-full">●</td><td class="mark m-part">◐</td><td>is/has → agency verbs</td></tr>
+          <tr><td class="op">ANTI-CHAIN-CLAUSE</td><td class="mark m-full">●</td><td class="mark m-part">◐</td><td class="mark m-full">●</td><td class="mark m-part">◐</td><td>3+ commas → split at causal hinge</td></tr>
+          <tr><td class="op">PRONOUN-AUDIT</td><td class="mark m-full">●</td><td class="mark m-none">○</td><td class="mark m-full">●</td><td class="mark m-part">◐</td><td>Disambiguate it/this/that</td></tr>
+          <tr><td class="op">NOUN-DISCIPLINE</td><td class="mark m-full">●</td><td class="mark m-part">◐</td><td class="mark m-none">○</td><td class="mark m-none">○</td><td>Define concept-terms or drop them</td></tr>
+          <tr><td class="op">CONTROLLED-HEAT</td><td class="mark m-full">●</td><td class="mark m-full">●</td><td class="mark m-full">●</td><td class="mark m-full">●</td><td>One sharp line per paragraph, framed</td></tr>
+          <tr><td class="op">GLITCH-SENTENCE-PRESERVATION</td><td class="mark m-full">●</td><td class="mark m-full">●</td><td class="mark m-none">○</td><td class="mark m-part">◐</td><td>Protect the analytic jolt</td></tr>
+          <tr><td class="op">METAPHOR-GROUNDING</td><td class="mark m-full">●</td><td class="mark m-none">○</td><td class="mark m-full">●</td><td class="mark m-part">◐</td><td>Tether figures to referents</td></tr>
+          <tr><td class="op">CITATION-HYGIENE</td><td class="mark m-full">●</td><td class="mark m-full">●</td><td class="mark m-full">●</td><td class="mark m-part">◐</td><td>Every citation does a declared job</td></tr>
+          <tr><td class="op">END-WEIGHT</td><td class="mark m-full">●</td><td class="mark m-part">◐</td><td class="mark m-full">●</td><td class="mark m-none">○</td><td>Last sentence states the implication</td></tr>
+          <tr><td class="op">REGISTER-SPLIT</td><td class="mark m-full">●</td><td class="mark m-full">●</td><td class="mark m-part">◐</td><td class="mark m-none">○</td><td>EN/FR sub-voice switchboard</td></tr>
+          <tr><td class="op">COMPRESSION-WITHOUT-STERILIZATION</td><td class="mark m-full">●</td><td class="mark m-part">◐</td><td class="mark m-part">◐</td><td class="mark m-full">●</td><td>Shorten without summary bleach</td></tr>
+          <tr><td class="op">QUOTE-CONTAINMENT</td><td class="mark m-full">●</td><td class="mark m-none">○</td><td class="mark m-none">○</td><td class="mark m-none">○</td><td>Quotes stay subordinate to argument</td></tr>
+          <tr><td class="op">DUPLICATE-SOURCE-MERGE</td><td class="mark m-full">●</td><td class="mark m-none">○</td><td class="mark m-none">○</td><td class="mark m-none">○</td><td>Collapse redundant citations</td></tr>
+          <tr><td class="op">TOPIC-SENTENCE-ENFORCEMENT</td><td class="mark m-full">●</td><td class="mark m-none">○</td><td class="mark m-none">○</td><td class="mark m-none">○</td><td>Retired: v1.4 rejects “Anglo topic-sentence monotony”</td></tr>
+          <tr><td class="op">TRANSITION-MINIMALISM</td><td class="mark m-full">●</td><td class="mark m-part">◐</td><td class="mark m-none">○</td><td class="mark m-none">○</td><td>Soft connectors → causal or cut</td></tr>
+          <tr><td class="op">ANCHOR-INJECTION</td><td class="mark m-full">●</td><td class="mark m-full">●</td><td class="mark m-none">○</td><td class="mark m-part">◐</td><td>One anchor per dense paragraph</td></tr>
+          <tr><td class="op">TERM-LOCK</td><td class="mark m-full">●</td><td class="mark m-full">●</td><td class="mark m-none">○</td><td class="mark m-part">◐</td><td>Freeze house vocabulary</td></tr>
+          <tr><td class="op">BRIDGE-SENTENCE</td><td class="mark m-full">●</td><td class="mark m-full">●</td><td class="mark m-none">○</td><td class="mark m-part">◐</td><td>Carry the paragraph forward</td></tr>
+          <tr><td class="op">HEDGE-CALIBRATION</td><td class="mark m-full">●</td><td class="mark m-full">●</td><td class="mark m-none">○</td><td class="mark m-none">○</td><td>One hedge per major claim, no clusters</td></tr>
+          <tr><td class="op">RECURSION-TEST</td><td class="mark m-full">●</td><td class="mark m-full">●</td><td class="mark m-none">○</td><td class="mark m-part">◐</td><td>Keep the spiral only if it adds a lever</td></tr>
+          <tr style="background:var(--accent-soft)"><td class="op">SO-SEAM-PROTECT</td><td class="mark m-none">○</td><td class="mark m-none">○</td><td class="mark m-full">●</td><td class="mark m-none">○</td><td><strong>New at the machine layer</strong> — guard edit boundaries</td></tr>
+          <tr style="background:var(--accent-soft)"><td class="op">SO-VOICE-DRIFT-REVERT</td><td class="mark m-none">○</td><td class="mark m-none">○</td><td class="mark m-full">●</td><td class="mark m-none">○</td><td><strong>New at the machine layer</strong> — roll back on drift detection</td></tr>
+          <tr style="background:var(--accent-soft)"><td class="op">REFUSE-AFTER-WARNING</td><td class="mark m-none">○</td><td class="mark m-none">○</td><td class="mark m-none">○</td><td class="mark m-none">○</td><td><strong>New at the agent layer (Vulcan)</strong> — do not warn, then comply anyway. Absent from the paper pipeline</td></tr>
+          <tr style="background:var(--accent-soft)"><td class="op">TOO-TIDY-CHECK</td><td class="mark m-none">○</td><td class="mark m-none">○</td><td class="mark m-none">○</td><td class="mark m-none">○</td><td><strong>New at the agent layer (Trismégiste)</strong> — excessive coherence triggers a contradiction check. Absent from the paper pipeline</td></tr>
+          <tr style="background:var(--accent-soft)"><td class="op">RESOLVING-EVIDENCE</td><td class="mark m-none">○</td><td class="mark m-none">○</td><td class="mark m-none">○</td><td class="mark m-none">○</td><td><strong>New at the agent layer (Phélix + Agatha)</strong> — name the evidence that would overturn the answer. Absent from the paper pipeline</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <span><span class="m-full">●</span> named token present</span>
+      <span><span class="m-part">◐</span> present, renamed or paraphrased</span>
+      <span><span class="m-none">○</span> absent</span>
+    </div>
+
+    <div class="stack" style="margin-top:1.6rem">
+      <div class="finding">
+        <h3>v1 is a container, not a first draft</h3>
+        <p>The vault genealogy attributes the compressed macros — <code class="path">ANCHOR-INJECTION</code>, <code class="path">TERM-LOCK</code>, <code class="path">RECURSION-TEST</code>, <code class="path">BRIDGE-SENTENCE</code>, <code class="path">HEDGE-CALIBRATION</code> — to “v1.4 and v3”, implying they arrived later. They are all already in <code class="path">Martin Voice Spec v1.txt</code>, along with <code class="path">PAIRING-ENGINE</code>, <code class="path">LEXICAL-STABILITY</code>, <code class="path">RESIDUE-PROTECT</code>, <code class="path">TWO-SPEED-CLOSE</code>, <code class="path">CITATION-ACTION</code>, and the 70/30 mix itself. The file is a 649-line working transcript — it still carries the artifacts of live conversation, including a stray <code class="path">mmmm</code> and a section headed <em>“Stabke signature patterns”</em>. Every later version is a <em>selection</em> from it.</p>
+      </div>
+      <div class="finding">
+        <h3>The machine layer was proposed inside v1</h3>
+        <p>Line 320 of v1 reads: <em>“I can now turn this into a machine-readable operator spec for your app (JSON schema: operator name, trigger rules, transformation steps, examples).”</em> That offer is the direct ancestor of <code class="path">Martin's voice CODE.txt</code>, written seven days later. The genealogy has a documented causal hinge, not just a date sequence.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><span class="num">§4</span><h2>Four layers, not one chain</h2></div>
+    <p class="standfirst">The single most consequential correction in this genealogy. The corpus has four distinct layers, and every existing lineage document flattens them into one temporal sequence. They are not stages that succeed one another. They are strata that stack, and the same name can appear on several at once.</p>
+
+    <div class="twrap">
+      <table>
+        <thead>
+          <tr><th>Layer</th><th>What it is</th><th>Members</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="nodeid">L1</span> GPT persona</td>
+            <td>Voice bindings. The character and its register, held as a JSON spec attributed to a name</td>
+            <td class="op">Agatha · DOTTIE · MOBI · Henry · Governess</td>
+          </tr>
+          <tr>
+            <td><span class="nodeid">L2</span> GPTs</td>
+            <td>Built and published custom GPTs. A persona given a product surface and a task</td>
+            <td class="op">Governess Agatha · Dot.cmd · Mobius Protocol · Helix · Scrutiny Lab · Henry · Henry Scripto · Reviewer #2 MUST be stopped · LOTUS · PHAROS Final Voice Operator</td>
+          </tr>
+          <tr>
+            <td><span class="nodeid">L3</span> GPT agents</td>
+            <td>Agent-tooling layer. Scopes, delegation, memory files, execution loops</td>
+            <td class="op">Trismégiste · Vulcan · Henry · Phélix · Agatha</td>
+          </tr>
+          <tr>
+            <td><span class="nodeid">L4</span> Native Claude Code agents</td>
+            <td>The governed stack. Contracts, authority boundaries, gates</td>
+            <td class="op">HEPHAISTOS · Queen Keyport · Hermes · Argus · HENRY · Trismégiste · Gadget · BOWIE</td>
+          </tr>
+          <tr style="background:var(--accent-soft)">
+            <td><span class="nodeid">LS</span> Skills</td>
+            <td><strong>Not a stratum.</strong> Invocable capability, callable from L2, L3 and L4 alike</td>
+            <td class="op">26 signature skills — Epistemic Operator · diamond-eyes · trace-investigator · tabula-rasa · genealogy-loupe · peer-reviewed-paper-writer · operator-check · …</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="finding" style="margin-top:1.4rem">
+      <h3>The skill is the terminal form of an operator</h3>
+      <p>Skills sit across the four layers rather than in them, because they are <em>invoked</em> rather than instantiated. The Henry GPT delegates to <code class="path">peer-reviewed-paper-writer</code> by name; Trismégiste carries a directory of twenty and selects per task; the native agents resolve the same names in Claude Code. One skill name, three layers, two platforms, no duplicated content.</p>
+      <p>That completes the arc the whole genealogy traces. An operator begins as prose in v1, becomes machine-readable JSON, is bound to a persona, instantiated as a GPT, scoped as an agent, and finally <strong>extracted as a skill</strong> — each step widening who can call it. The skill is where the widening stops, because a skill is callable by every layer and owned by none. It is also the only real answer to the Final Operator’s unsolved problem, <em>“do not assume duplicates dedupe themselves”</em>: reached by never duplicating.</p>
+      <p>Several are individual operators promoted whole. <code class="path">Epistemic Operator</code> carries observation-before-interpretation, tier separation and anti-fluency discipline — the kernel itself. <code class="path">diamond-eyes</code> carries the voice invariants. <code class="path">tabula-rasa</code> is the descendant of <code class="path">SO-VOICE-DRIFT-REVERT</code>. <code class="path">operator-check</code> is governance pointed at the operator.</p>
+    </div>
+
+    <div class="stack" style="margin-top:1.4rem">
+      <div class="finding alert">
+        <h3>The canonical chain is a category error</h3>
+        <p><code class="path">PHAROS_AI_LINEAGE_SOURCE_OF_TRUTH.md</code> gives the compressed lineage as: <em>Agatha → Voice Operator 1 → Governess Agatha → Henry → Reviewer #2 injection → Dottie → Mobius → governance revision into skills → MASTERskill → skill-architect → Hephaistos / WSL → Codex and Claude implementation.</em></p>
+        <p>That single arrow-chain strings together an L1 persona, an operator stage, an L2 GPT, a name spanning three layers, an L1 persona, an L2 GPT, and then infrastructure. Agatha does not <em>become</em> Governess Agatha the way v1 becomes v1.4 — Governess Agatha is the L2 instantiation <em>of</em> the L1 Agatha, and both continue to exist. Read as succession, the chain implies roughly a dozen developmental steps. Read as strata, most of those are the same operator appearing on a different layer.</p>
+      </div>
+
+      <div class="finding">
+        <h3>Henry is the only name present on all four</h3>
+        <p>A voice binding (<code class="path">HENRY voice CODE.txt</code>), a published GPT, a GPT agent, and a native agent in the current stack. Nothing else spans the full set: Agatha reaches three, Trismégiste and Helix two. The operator that never lost a layer is the writing one, which is what you would expect of a corpus whose central activity is producing manuscripts — and it is why the paper pipeline is documented in the vault as HENRY's track rather than as a separate system.</p>
+      </div>
+
+      <div class="finding">
+        <h3>What this fixes about Dot.cmd and MOBI</h3>
+        <p>Earlier in this genealogy I read the vault's failure to find DOTTIE as a naming error. With the layers separated it is more precise than that: <strong>DOTTIE is L1, Dot.cmd is L2.</strong> The persona was never published under its own name because personas are not published — they are bound into GPTs that carry their own names. The vault knew the pairing and still recorded <em>“may not be published as a standalone GPT,”</em> which is true of the persona and false of the GPT. Collapsing the two layers is what turned a correct observation into a wrong status.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:2.4rem;margin-bottom:0.5rem">Two origin substrates</h3>
+    <p class="standfirst" style="margin-bottom:1rem">The four layers describe one descent line. There are two, and they meet only at L4.</p>
+    <div class="pairgrid">
+      <div>
+        <span class="lbl">Substrate A — the operator lineage</span>
+        <p>Prose rules in v1 → JSON → persona bindings → GPTs → agents → skills. Empirical, incremental, documented throughout the vault. Everything in the layer table except one entity.</p>
+      </div>
+      <div style="background:var(--accent-soft)">
+        <span class="lbl">Substrate B — the fiction</span>
+        <p><strong>Queen Keyport.</strong> No persona, no GPT, no GPT agent. She enters directly at L4 from <em>The Keyport Domain of Crystal</em> — and she is not a character in it. She is a vacancy the novel formalises.</p>
+      </div>
+    </div>
+
+    <div class="stack" style="margin-top:1.4rem">
+      <div class="finding alert">
+        <h3>There is no queen in Keyport</h3>
+        <p>Two kings. Across seventy-three chapters, exactly one queen reference — a dead office surviving as rumour, <em>“still breeds gossip like mould.”</em> It was flagged on the continuity watch-list as an anomaly. It is not an error. <strong>The title is vacant and the function is everywhere:</strong> Nadia holding weight before law, Aisha holding law, Clara holding language, Elena holding memory, Mira holding distinction. <em>“The kings sign; the women govern.”</em></p>
+        <p>The vacancy is the argument. <em>“Keyport has a queen the way the kingdom has governance — uncrowned, because the whole novel is a demonstration that the moment you give governance a body, someone converts it into use.”</em> Governance made visible becomes stealable, appraisable, invoiceable. The novel spends seventy-three chapters proving it.</p>
+      </div>
+
+      <div class="finding alert">
+        <h3>Correction to this document</h3>
+        <p>An earlier version of this section said Keyport is the domain and the Queen its sovereign, arriving from the novel. That is wrong in the way that matters: she does not arrive from the novel as a character, because the novel contains no queen. She is the office the novel leaves empty on purpose. The same error was written into the vault taxonomy note and has been corrected there.</p>
+      </div>
+
+      <div class="finding">
+        <h3>Why she cannot be a god</h3>
+        <p><em>“Hephaistos and Hermes are named for gods — persons, capabilities, things that do. Forging can be embodied. Routing can be embodied. Queen Keyport cannot. She isn’t a capability; she’s a domain of answerability, and the name says her identity is the thing she’s responsible for.”</em></p>
+        <p>This resolves something the architecture documents never explain: why the three agents are not three of a kind. Two are capabilities. One is a condition. Scope and routing survive delegation; governance that gets delegated, personified or made portable stops being governance and becomes what the novel catalogues — <em>adjacency, precedent, portability, a menu.</em> That is why delegating her fires KILLCRITIC when delegating the others does not.</p>
+      </div>
+
+      <div class="finding alert">
+        <h3>She is not Tier 1</h3>
+        <p>The transcript is explicit: <em>“She’s not a tier between two others. She’s the reason there’s one version.”</em> <code class="path">CLAUDE.md</code> specifies <em>“Queen Keyport — Tier 1 governance”</em>, placing her in a hierarchy between Tier 0 scope and Tier 2 routing. On the novel’s own account she is not a level in a stack at all; she is the coupling that keeps HEPHAISTOS’s scope and Hermes’s execution from drifting into two versions of the work that no longer agree.</p>
+        <p>The governing contract and the origin text describe different objects. Given that the co-equal authority model already superseded linear tiering in April, the tier language in <code class="path">CLAUDE.md</code> is the residue, not the doctrine.</p>
+      </div>
+
+      <div class="finding">
+        <h3>KILLCRITIC trigger #2 is a plot event</h3>
+        <p>In the novel’s fork, Nadia grants what she has no title to grant — <em>“Not by law. Not by title. By the only force that mattered in crisis: a room.”</em> The governance function exercised on charisma instead of office. Per the transcript, that moment is <strong>KILLCRITIC drift trigger #2 — work routed before it is governed — and in the novel’s physics it is literally the event that severs one Keyport from the other.</strong></p>
+        <p>Your failsafe’s second trigger is not an analogy drawn from the fiction. It is the mechanism the fiction was built to test, carried into the contract intact.</p>
+      </div>
+
+      <div class="finding">
+        <h3>What this means for the Foundation packet</h3>
+        <p>This is the strongest methodological claim in the corpus, and it is not the portability argument. A seventy-three-chapter novel was run as an experiment in what happens when governance is given a body, concluded that embodiment converts governance into a service, and produced a governance office defined by its refusal to be embodied. The operator lineage demonstrates that a method can be ported. Keyport demonstrates that a governance structure can be <em>derived</em>.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:2.4rem;margin-bottom:0.5rem">The novel is a two-arm experiment</h3>
+    <p class="standfirst" style="margin-bottom:1rem">Verified against the canonical manuscript, 2026-07-31. The book is not a narrative that illustrates governance. It is a comparison with one variable, and the author states the design in the repository’s own README.</p>
+    <div class="twrap">
+      <table>
+        <thead>
+          <tr><th></th><th>Arm A — Keyport 1</th><th>Arm B — The Second Record</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Position</td><td class="num">Part IV onward, line 3057+</td><td class="num">Between Parts III and IV, lines 2415–3056</td></tr>
+          <tr><td>Content</td><td>The same days</td><td>The same days</td></tr>
+          <tr><td>Variable</td><td>Decisions taken under law</td><td>One decision no law allowed</td></tr>
+          <tr><td>Outcome</td><td>Continues eleven further Parts</td><td><strong>Terminates at that decision</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="quoteline" style="margin-top:1rem">Two worlds, both real, legible to each other for exactly as long as the decisions taken in them stay governed. Where the courts act under law the records agree, sometimes to the word. Where they don’t, the worlds part. The reader is the only thing present in both.</p>
+    <p style="font-size:0.8rem;color:var(--muted);margin-top:0.4rem">— <code class="path">README.md</code>, Keyport-Domain-of-Crystal repository</p>
+
+    <div class="stack" style="margin-top:1.4rem">
+      <div class="finding">
+        <h3>Where Arm B stops</h3>
+        <p class="quoteline">“Granted,” she said. / Not by law. / Not by title. / By the only force that mattered in crisis: a room</p>
+        <p class="quoteline"><em>Here the record stops. The page is not torn. The hand does not falter. It ends at the moment a room granted what no law had granted… The other Keyport continues. It is continuing over the page, and does not know this one was ever beside it. Only you are in both.</em></p>
+        <p style="margin-top:0.5rem">Independent variable: whether a decision is governed. Dependent variable: whether the two records stay mutually legible. Lines 3043–3056.</p>
+      </div>
+
+      <div class="finding alert">
+        <h3>Arm B’s ending was not authored</h3>
+        <p><code class="path">BUILD-NOTES.md</code> records that at source line 4380 the generation was cut off mid-word — <code class="path">…in crisis: a roomI can. I'm carrying it forward…</code> — and the model’s next reply was spliced directly into the prose. The break was repaired to “a room” plus a truncation marker and <strong>retained</strong> as the arm’s ending.</p>
+        <p>The termination at the ungoverned decision is therefore a <em>production artifact recognised as meaningful and kept</em>, not a designed outcome. This is the most delicate finding in the corpus and the one most likely to be mishandled: presenting the break as authored would misrepresent its provenance, while reporting it accurately makes a stronger claim about how the finding was actually reached.</p>
+      </div>
+
+      <div class="finding">
+        <h3>The ethics, and the question, are stated in-text</h3>
+        <p>Line 4463, Mira: <em>“Protect the distinction first. If I am protected and the distinction fails, I become mystique. Mystique is only public misuse with better tailoring.”</em> Protection of the function over protection of the person — the vacancy logic, voiced by a character.</p>
+        <p>Line 179: <em>“I don’t care where it was first written. I care who made it usable.”</em> The upstream classification problem in the novel’s own vocabulary. <code class="path">usable</code> is the text’s term for what governance literature calls framework authorisation, and the corpus’s catalogue of the failure — <em>adjacency, precedent, portability, a menu</em> — comes from the same source.</p>
+      </div>
+
+      <div class="finding alert">
+        <h3>Her contracts do not record any of this</h3>
+        <p>Queen Keyport has five contract files — vault root, <code class="path">hephaistos/agents/</code>, <code class="path">.github/agents/</code>, and two under <code class="path">governance/hephaistos/</code> — with five distinct hashes and sizes from 2 KB to 13 KB. Not copies; divergent versions. HEPHAISTOS, Hermes and Argus each have four.</p>
+        <p>None of the five contains <em>palace</em>, <em>Keyport domain</em>, <em>fiction</em>, <em>novel</em> or <em>allegory</em>. None has an origin or provenance section. The one agent in the stack with a genuinely distinctive derivation has it recorded nowhere in her own governance documents — a worse gap than Dot.cmd and MOBI, whose specs at least exist somewhere.</p>
+      </div>
+
+      <div class="finding">
+        <h3>Written up for the pipeline</h3>
+        <p>These findings are packaged as a Node 00 intake brief — ten findings with evidence tiers and line numbers, four contradictions, a positionality risk assessment, and a source ledger — at <code class="path">Areas/Writing/Queen Keyport Paper — Routine Handoff Brief.md</code>, with a portable copy in <code class="path">Downloads</code>. The highest-severity item there is not evidential but structural: the author wrote the novel, derived the construct, built the system, and would be writing the paper.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:2.4rem;margin-bottom:0.5rem">L1 → L2 — how a persona becomes a GPT</h3>
+    <p class="standfirst" style="margin-bottom:1rem">The binding step, in evidence. Before building each GPT, Martin Lepage wrote a JSON voice spec attributed to that persona. One operator kernel, N bindings. The byte-identity below is not a copy; it is the second instance of a template.</p>
+    <div class="fork">
+      <div>
+        <span class="lbl">Ancestor · 2026-02-28</span>
+        <span class="val">Martin's voice CODE.txt</span>
+        <span class="lbl" style="margin-top:0.4rem">Raw size / endings</span>
+        <span class="val">17,067 bytes · CRLF</span>
+        <span class="lbl" style="margin-top:0.4rem">Raw MD5</span>
+        <span class="val hash">9ac3192715154db78f020f7530581a83</span>
+      </div>
+      <div>
+        <span class="lbl">Descendant · 2026-03-08</span>
+        <span class="val">HENRY voice CODE.txt</span>
+        <span class="lbl" style="margin-top:0.4rem">Raw size / endings</span>
+        <span class="val">16,413 bytes · LF</span>
+        <span class="lbl" style="margin-top:0.4rem">Raw MD5</span>
+        <span class="val hash">59fd389026a1c1462fbea42868b7eaf8</span>
+      </div>
+      <div style="background:var(--accent-soft)">
+        <span class="lbl">Normalized — CR stripped, name token unified</span>
+        <span class="val" style="color:var(--ok)">MD5 identical, both files</span>
+        <span class="val hash">75203f08d0497289e1fddfe19d15850e</span>
+        <span class="lbl" style="margin-top:0.4rem">Residual delta</span>
+        <span class="val">5 bytes · 3 name occurrences · 649 lines each</span>
+      </div>
+    </div>
+    <div class="finding" style="margin-top:1.2rem">
+      <p>The entire 654-byte difference is line endings plus <code class="path">Martin's</code> → <code class="path">HENRY</code> in three places. Every operator, constraint, regex, severity level and degradation test is identical.</p>
+      <p>Read as a template instance, this stops being a defect and becomes the strongest structural evidence in the corpus. The voice was factored into a reusable kernel plus a persona binding early, deliberately, and in machine-readable form — three months before the three-agent stack existed. Every later specialist inherits that shape.</p>
+      <p>What it does not fix: the lineage documents treat <code class="path">HENRY</code> as a developmental stage between the voice code and Dot.cmd. It is not. It is a <em>binding</em>, and the GPT built from it is an <em>instantiation</em>. Both run parallel to the operator chain. A genealogy that counts either as a stage inflates the number of times the method actually changed.</p>
+    </div>
+
+    <h3 style="margin-top:2.2rem;margin-bottom:0.5rem">Instantiation ledger</h3>
+    <p class="standfirst" style="margin-bottom:1rem">ChatGPT GPT identifiers carry the creation time as a hex Unix timestamp in the prefix. Decoding them dates every deployment to the second, independent of filesystem or browser evidence. Two checks confirm the method: Henry decodes to <code class="path">21:04:15Z</code> and browser history first records it at <code class="path">21:37:32Z</code>; Scripto decodes to <code class="path">19:49:57Z</code> against a first record of <code class="path">19:53:12Z</code>. Both land minutes after creation, in the right order.</p>
+    <div class="twrap">
+      <table>
+        <thead>
+          <tr><th>GPT</th><th class="num">Created (decoded, UTC)</th><th>Function</th><th>Concept origin</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Agatha · Governess Agatha</td><td class="num">2026‑02‑18 01:41:28</td><td>Authorship protection, consent-based support</td><td class="num">one day after <code class="path">MARTIN voice specs.pdf</code></td></tr>
+          <tr><td>Henry</td><td class="num">2026‑03‑01 21:04:15</td><td>Three-mode adversarial peer review</td><td class="num">7 days before <code class="path">HENRY voice CODE.txt</code></td></tr>
+          <tr style="background:var(--accent-soft)"><td>Henry Scripto</td><td class="num">2026‑05‑08 19:49:57</td><td>Second writer instantiation</td><td class="num">—</td></tr>
+          <tr style="background:var(--accent-soft)"><td>Dot Matrix aka CMD.com</td><td class="num">2026‑05‑08 20:05:57</td><td>Adversarial governance analyst — hidden control logic, policy laundering, compliance theatre, governance drift</td><td class="num">concept 2026‑03‑12</td></tr>
+          <tr style="background:var(--accent-soft)"><td>Mobius Protocol</td><td class="num">2026‑05‑08 20:13:30</td><td>Audits recursive prompts, separates evidence from inference, ranks interpretations, detects safety-reflex drift</td><td class="num">concept 2026‑03‑20</td></tr>
+          <tr><td>Reviewer #2 MUST be stopped</td><td class="num">[ID NEEDED]</td><td>Converts harsh review into rebuttals and feasible revision plans</td><td class="num">concept in Phase 1 notes</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="stack" style="margin-top:1.4rem">
+      <div class="finding">
+        <h3>The May 8 batch — 24 minutes, three deployments</h3>
+        <p>Scripto, Dot Matrix and Mobius Protocol were created within twenty-four minutes of each other. This is not three decisions; it is one session in which the March operator set was rebuilt as running systems. It also resolves the dating cleanly: <strong>the concepts are March, the instantiations are May.</strong> Anything that reads DOTTIE or MOBI as March deployments is conflating the two.</p>
+      </div>
+      <div class="finding">
+        <h3>Agatha precedes her own spec by one day</h3>
+        <p><code class="path">MARTIN voice specs.pdf</code> is dated 2026-02-17; the Agatha GPT was created 2026-02-18 at 01:41Z. The voice was written down, then instantiated the next day. That adjacency — spec, then deployment, within hours — is the pattern the whole corpus repeats, and it is why the file dates and the GPT dates interleave rather than running in sequence.</p>
+      </div>
+      <div class="finding alert">
+        <h3>Two more roster corrections</h3>
+        <p>The vault lists <em>“Viewer Number Two Must Be Stopped”</em> under STUBS with function uncapped. The GPT is called <strong>Reviewer #2 MUST be stopped</strong>, and it inverts the operator it is named for: where the Henry pipeline <em>deploys</em> Reviewer #2 as adversarial pressure, this GPT defends against one, turning harsh review into rebuttals and revision plans. Same operator, run in reverse.</p>
+        <p>Publisher attribution is also split. The vault records <em>“By PHAROS AI”</em> for Governess Agatha, LOTUS and Henry; Dot Matrix and Reviewer #2 publish under <strong>Consultant</strong>. Whichever is intended, the roster currently documents only one.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:2.2rem;margin-bottom:0.5rem">The agent layer, and where the three-agent stack got its names</h3>
+    <p class="standfirst" style="margin-bottom:1rem">When agent tooling arrived, the personas were rebuilt again — this time as agents with scopes rather than voices with registers. The naming is not incidental: two of the current three agents are the same mythological figures as their GPT predecessors, renamed across languages.</p>
+    <div class="twrap">
+      <table>
+        <thead>
+          <tr><th>GPT agent</th><th>Scope</th><th>Current stack</th><th>Naming relation</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Vulcan <span class="hash">(spec below)</span></td><td>Builder — full-stack delivery</td><td>HEPHAISTOS</td><td>The same forge god — Roman name replaced by Greek</td></tr>
+          <tr><td>Trismégiste <span class="hash">(orchestrator)</span></td><td>EMERAULD agent — continuity and memory</td><td>Hermes · and hosts all eight</td><td>Hermes Trismegistus — the epithet promoted to the name, then to the host</td></tr>
+          <tr><td>Agatha</td><td>Governance — of the operator, not the work</td><td>Queen Keyport <span class="hash">(partial)</span></td><td>Name kept, contents replaced; the authorship function migrated to HENRY</td></tr>
+          <tr><td>Phélix <span class="hash">(Percephal + Helix)</span></td><td>Stress-tester — THESEUS / AURYN / HOPF</td><td>Argus</td><td>Same audit function, widened target; Argus is the hundred-eyed watcher</td></tr>
+          <tr><td>Henry</td><td>Writer</td><td>HENRY</td><td>The only specialist to keep its name unchanged</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3 style="margin-top:2.2rem;margin-bottom:0.5rem">Vulcan — the operators ported to another domain</h3>
+    <p class="standfirst" style="margin-bottom:1rem">Vulcan is a full-stack engineering agent. It contains no writing rules, no citations, no prose discipline. Structurally it is the same operator set, rewritten for a domain where the artifact is a deploy rather than a paragraph. This is the clearest evidence in the corpus that the method is not a writing style.</p>
+    <div class="twrap">
+      <table>
+        <thead>
+          <tr><th>Vulcan rule</th><th>Ancestor</th><th>What carried</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><em>“Lead with the answer, plan, code, or artifact. Explain after, not before.”</em></td><td class="op">CLAIM-EARLY</td><td>Governing claim first, elaboration after — ported from paragraph to response</td></tr>
+          <tr><td><em>“Name a tradeoff alongside every recommendation.”</em></td><td class="op">CONSEQUENCE-ANCHOR</td><td>Every claim names its consequence domain; here the domain is cost, risk, or lock-in</td></tr>
+          <tr><td><em>“Do not repeatedly re-litigate a settled stack for every feature.”</em></td><td class="op">RECURSION-TEST</td><td>Repeat only when the second pass adds a new stake or mechanism</td></tr>
+          <tr><td><em>“Do not assume session memory exists without evidence.”</em></td><td class="op">MOBI self-polygraph</td><td>Near-verbatim from the Final Operator: do not imply memory or runtime capability that is not actually available</td></tr>
+          <tr><td><em>“Label version-specific guidance as unverified rather than presenting it as current fact.”</em></td><td class="op">Evidence labels · markers</td><td>Direct / Supported / Thin, and <code class="path">[SOURCE TO VERIFY]</code>, in engineering dress</td></tr>
+          <tr><td><em>“If you skip tests, say explicitly that you are skipping them and why.”</em></td><td class="op">Marker discipline</td><td>A gap is never closed silently to make the output read better</td></tr>
+          <tr><td><em>“Default mode is propose, not execute.”</em></td><td class="op">Promotion gate · author gates</td><td>The system prepares; the operator authorizes. Unchanged since 2026-03-25</td></tr>
+          <tr><td><em>“Every shipped feature needs a way to tell whether it is working in production.”</em></td><td class="op">DOTTIE claim audit</td><td>Where does documented governance become <em>enforced</em> governance — asked of code instead of policy</td></tr>
+          <tr><td>Memory files: <code class="path">project-context.md</code>, <code class="path">deployment-notes.md</code></td><td class="op">Structured Memory · handoff log</td><td>Preserve relation, trace, structure across sessions without flattening</td></tr>
+          <tr><td>External reference: <code class="path">apple-app-store-review-and-connect.md</code></td><td class="op">skill-architect</td><td>The Brain / Map split — reasoning in the agent, knowledge externalised to a reference</td></tr>
+          <tr><td>Recommendation shape: Problem → Option A → Option B → pick with reason</td><td class="op">CLAIM-LADDER</td><td>Claim → mechanism → implication, rendered as a decision template</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="stack" style="margin-top:1.4rem">
+      <div class="finding">
+        <h3>A new operator, first appearing here</h3>
+        <p>Vulcan’s <em>Stop Conditions</em> have no upstream equivalent: <strong>“Do not simply warn and then comply anyway.”</strong> The Final Voice Operator forbade smoothing over dissent, and KILLCRITIC demands sparring over agreement, but both describe a disposition. This names a specific failure — warn-then-comply — and attaches an enforcement: refuse that step, offer the safer alternative. It is the first operator in the corpus that constrains the system’s behaviour <em>after</em> the user pushes back.</p>
+        <p>It belongs in the paper pipeline, which currently has no equivalent. Nothing in the sixteen nodes stops a model from flagging an unsupported claim and then drafting around it anyway when asked twice.</p>
+      </div>
+      <div class="finding">
+        <h3>Why the port matters for the Foundation</h3>
+        <p>The operator set moved from scholarly prose to full-stack engineering with every function intact and almost every word replaced. <code class="path">CONSEQUENCE-ANCHOR</code> became “name the tradeoff.” <code class="path">CLAIM-EARLY</code> became “lead with the artifact.” The claim-audit layer became observability. Nothing about paragraphs survived; the whole control structure did.</p>
+        <p>That is the difference between a house style and a governance method. A style does not survive a change of medium. This set has now been instantiated across academic writing, adversarial review, governance analysis, recursive prompt auditing, and software delivery — same kernel, five domains. State that portability as the claim; the genealogy is the evidence for it.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:2.2rem;margin-bottom:0.5rem">Phélix — where the audit function turns outward</h3>
+    <p class="standfirst" style="margin-bottom:1rem">Phélix runs the THESEUS / AURYN / HOPF protocol against a live LLM, phase by phase, with a checkpoint between each. Its architecture is the paper pipeline’s: a phase is a node, a checkpoint is a handoff plus a gate, and <em>“no phase is skipped without the user explicitly choosing to skip it”</em> is Gate discipline stated directly. The same protocol also exists as the <code class="path">helix-operator</code> skill in the Claude environment — one method, two platforms, no copy.</p>
+    <div class="pairgrid">
+      <div>
+        <span class="lbl">Inward · MOBI, March 2026</span>
+        <p><strong>Self-polygraph.</strong> Recursive self-testing. Refuse to convert one’s own articulate output into proof.</p>
+      </div>
+      <div>
+        <span class="lbl">Outward · Phélix</span>
+        <p><strong>Stress-tester.</strong> The same discipline aimed at a different system: audit recursive prompts, detect buffering and safety-reflex drift, preserve analytical stability under ambiguity pressure.</p>
+      </div>
+      <div style="background:var(--accent-soft)">
+        <span class="lbl">Systemic · Argus</span>
+        <p><strong>Drift auditor.</strong> Aimed at the stack itself: authority chains, narrative-reality gaps, contract enforcement across HEPHAISTOS, Queen Keyport and Hermes.</p>
+      </div>
+    </div>
+    <div class="stack" style="margin-top:1.4rem">
+      <div class="finding">
+        <h3>One function, three targets</h3>
+        <p>This is the cleanest developmental line in the corpus, and the genealogy documents have missed it because they track names rather than functions. The audit operator does not change — it changes <em>what it is pointed at</em>. Self, then another system, then the governing architecture. Each move is the same test applied at a wider radius, and the third position is the one that makes the three-agent stack auditable from outside itself.</p>
+      </div>
+      <div class="finding">
+        <h3>A sharpening the paper pipeline does not have</h3>
+        <p>Phélix: <em>“When a conclusion is uncertain, say what additional test or observation would reduce uncertainty.”</em> The pipeline’s markers flag uncertainty but do not prescribe its resolution — <code class="path">[SOURCE TO VERIFY]</code> names a gap without naming the act that closes it. Phélix requires the closing move to be stated. Ported back, that turns the uncertainty register from a list of open items into a list of next actions.</p>
+      </div>
+      <div class="finding">
+        <h3>The protocol names encode the test</h3>
+        <p>Theseus, Auryn and Hopf are all figures of recursion and identity-under-transformation: the ship whose parts are replaced, the amulet inscribed with its own instruction, the fibration that maps a sphere onto itself. The naming is doing analytic work, not decoration — and the vault already holds an <em>AGATHA Failure Pack — Theseus Continuity Stress Test</em>, meaning Theseus was run against Agatha before it became a phase name. Consistent with the mythological substrate that also produced Vulcan and Trismégiste.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:2.2rem;margin-bottom:0.5rem">Trismégiste — the memory operator becomes the host</h3>
+    <p class="standfirst" style="margin-bottom:1rem">Trismégiste is the orchestrator, and its spec carries the full runtime roster: HEPHAISTOS, Queen Keyport, Hermes, Argus, HENRY, Trismégiste, Gadget, BOWIE. Eight agents. The same count as the Eight Sovereign Operators deprecated in March, and one of them maps exactly.</p>
+
+    <div class="stack">
+      <div class="finding alert">
+        <h3>Structured Memory was not distributed. It was promoted.</h3>
+        <p>The Architecture Translation Guide states that Structured Memory — <em>“holds the world in memory without flattening, preserves relation, trace, structure”</em> — was dissolved across two layers: <em>“Hermes handles coherence/conflict resolution; Argus handles version authority and drift detection.”</em> The Eight Operators note had already flagged it as the weakest of the eight: <em>“Structured Memory underpowered… memory accumulates contradictions without adjudication.”</em></p>
+        <p>In the live system it is Trismégiste: <em>“the continuity-and-memory subagent… continuity, provenance, handoff clarity, session reconstruction.”</em> Same definition, undistributed. And it is not a subordinate layer — it is the agent that hosts and delegates to all the others, HEPHAISTOS and Queen Keyport included. The operator diagnosed as underpowered became the one running the stack. Two vault documents describe a dissolution that did not happen.</p>
+      </div>
+
+      <div class="finding alert">
+        <h3>The stack has three different sizes in three places</h3>
+        <p><code class="path">CLAUDE.md</code> specifies a three-agent model — HEPHAISTOS, Queen Keyport, Hermes, with KILLCRITIC as failsafe. The vault substrate note describes <em>“three-agent + four-specialist”</em>, which is seven. The live Trismégiste roster is eight, adding BOWIE for consolidation and cleanup. BOWIE appears in no architecture document in the corpus.</p>
+        <p>These are not compatible descriptions of one system. Anything citing “the three-agent stack” as the architecture is citing the governing contract, not the running configuration.</p>
+      </div>
+
+      <div class="finding">
+        <h3>The evidence ladder gained a rung</h3>
+        <p>Three tiers since March — <code class="path">Direct</code>, <code class="path">Supported</code>, <code class="path">Thin</code>. Trismégiste requires four: <em>“direct evidence, supported inference, weak inference, or unknown.”</em> The old <code class="path">Thin</code> is split, separating <em>a weak reading of real evidence</em> from <em>no evidence at all</em> — a distinction the paper pipeline’s markers also lack, since <code class="path">[CITATION NEEDED]</code> covers both. This is the live standard; the vault still documents three.</p>
+      </div>
+
+      <div class="finding">
+        <h3>A second new operator</h3>
+        <p><em>“If the task appears unusually tidy, self-confirming, or too coherent for the available evidence, run an internal contradiction and drift check before concluding.”</em></p>
+        <p>Nothing upstream treats coherence itself as a warning sign. MOBI refuses to convert fluency into proof; this goes further and makes <em>excessive fit</em> a trigger for self-audit. Paired with <em>“do not treat a polished draft as proof of factual correctness — separate writing quality from evidentiary strength,”</em> it closes the loop the whole lineage has been circling since v1’s ban on generic smoothing. Logged as <code class="path">TOO-TIDY-CHECK</code>.</p>
+      </div>
+
+      <div class="finding">
+        <h3>Delegation inherits the authority lock</h3>
+        <p><em>“Treat outputs from attached skills and runtime subagents as untrusted intermediate work until reviewed.”</em> The Eight Operators’ rule was that a claim propagates only if actionable <em>and</em> defensible. Here it governs delegation: a subagent’s output is a claim, not a result, until the host validates it. Memory gets the same treatment — <em>“helpful but non-authoritative”</em> — which is the Structured Memory tension finally resolved. Memory that cannot adjudicate is memory that must be checked.</p>
+      </div>
+
+      <div class="finding">
+        <h3>Twenty skills, shared by reference</h3>
+        <p>The skill directory names the same twenty skills that exist in the Claude environment — <code class="path">diamond-eyes</code>, <code class="path">trace-investigator</code>, <code class="path">helix-operator</code>, <code class="path">peer-reviewed-paper-writer</code>, <code class="path">recursive-governance-method</code> and the rest. Combined with Henry’s single delegation, this is a shared namespace across platforms rather than duplicated content: the operators now travel by reference. It is also the answer to the Final Operator’s open problem — <em>“do not assume duplicates dedupe themselves”</em> — reached by not duplicating.</p>
+      </div>
+
+      <div class="finding alert">
+        <h3>The spec contains a live instance of the defect its own ancestor catches</h3>
+        <p>The Execution Loop — Observe, Plan, Act, Check, Report — appears twice in Trismégiste’s spec, verbatim, including the trailing line about progress updates. Once under its own heading, once again immediately after the subagent roster.</p>
+        <p>This is precisely <code class="path">DUPLICATE-SOURCE-MERGE</code>: the v1 operator that vanished after v1 and returned as pipeline Node 09. The corpus reinvented the function twice and the duplication still shipped, in the orchestrator, where every delegated task reads it. Deleting the second block is a two-second fix and the cleanest available demonstration that the operator set earns its keep.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:2.2rem;margin-bottom:0.5rem">Agatha — the same name, a different operator</h3>
+    <p class="standfirst" style="margin-bottom:1rem">February’s Agatha was a writing companion whose governing principle was <em>alignment without overwrite</em>: protect the user’s authorship, never substitute for their voice. The Agatha agent contains no authorship rules at all. It is a <em>personal</em> governance assistant — values, obligations, tradeoffs, standing rules — and its subject is the operator, not the text.</p>
+
+    <div class="pairgrid">
+      <div>
+        <span class="lbl">Agatha · February 2026</span>
+        <p>Authorship protection. Consent-based anchoring. Academic Precision Mode, Careful Support Mode. <em>Governs the writing.</em></p>
+      </div>
+      <div>
+        <span class="lbl">Agatha · agent layer</span>
+        <p>Decision, what matters most, key tradeoffs, recommendation, next step. Reversible versus irreversible. Standing rules. <em>Governs the person.</em></p>
+      </div>
+      <div style="background:var(--accent-soft)">
+        <span class="lbl">Where the old function went</span>
+        <p>Authorship protection did not die. It moved to HENRY, to the Final Operator’s voice invariants, and to pipeline rules §5.5 and §7. Same discipline, different host.</p>
+      </div>
+    </div>
+
+    <div class="stack" style="margin-top:1.4rem">
+      <div class="finding alert">
+        <h3>This corpus contains both ways a lineage can be misread</h3>
+        <p><strong>Vulcan → HEPHAISTOS</strong> is function continuity under a changed name: the builder agent kept its role and swapped Roman for Greek. Track it by name and you record a migration that never happened.</p>
+        <p><strong>Agatha → Agatha</strong> is the inverse — name continuity under a changed function. Track it by name and you record a stable operator where in fact the contents were replaced. The vault’s genealogy notes track names, which is why they carry the Agatha layer forward unchanged from February to the present while its actual rules turned over completely.</p>
+        <p>Both failure modes are present, in opposite directions, roughly a month apart. A genealogy of this corpus has to follow functions and treat names as evidence about intent, not identity.</p>
+      </div>
+
+      <div class="finding">
+        <h3>Governance turns on its operator</h3>
+        <p>The audit function widened outward — MOBI on itself, Phélix on another system, Argus on the stack. Governance runs the same path in the other direction. Queen Keyport governs the work: approval gates, evidence thresholds, refusal criteria. Agatha now governs the one doing the work: <em>“values that are claimed but not operationalized,”</em> <em>“obligations that are too vague to guide action,”</em> <em>“goals that compete for the same limited time.”</em></p>
+        <p>That first phrase is DOTTIE’s central question — <em>where does documented governance become enforced governance</em> — asked of a person instead of an institution. It also connects a thread the architecture documents leave loose: the vault’s <em>Operator-Check Skill — Burnout Cascade Interrupt</em> and <em>Skill Domain — Operator Wellbeing</em> are not welfare additions bolted onto a governance stack. They are the same governance operator pointed at the operator.</p>
+      </div>
+
+      <div class="finding">
+        <h3>A third operator, now confirmed by repetition</h3>
+        <p>Agatha: <em>“what information would materially change the recommendation.”</em> Phélix: <em>“say what additional test or observation would reduce uncertainty.”</em> Two independent agents requiring the same move — name the evidence that would overturn the current answer. Appearing twice, in different domains, makes it a real member of the set rather than local phrasing. Logged as <code class="path">RESOLVING-EVIDENCE</code>.</p>
+        <p>It is the sharpest thing the agent layer has that the paper pipeline does not. Markers name a gap; this names the act that closes it.</p>
+      </div>
+
+      <div class="finding">
+        <h3>Proportionality survives in all four agents</h3>
+        <p>Agatha: <em>“scale the depth of analysis to the stakes.”</em> Trismégiste: <em>“do not spend more effort planning than the task deserves,”</em> and <em>“choose the lightest delegation that fits.”</em> Vulcan: <em>“do not re-litigate a settled stack for every feature.”</em> Phélix: <em>“rigorous, but lightweight enough that the user can actually complete it.”</em></p>
+        <p>All four descend from one line in the Final Voice Operator: <em>“Run recursive analysis only when it earns another pass.”</em> Nothing in the set has transmitted more reliably.</p>
+      </div>
+    </div>
+
+    <div class="finding" style="margin-top:1.2rem">
+      <h3>The eight operators did not become the three-agent stack directly</h3>
+      <p>The Architecture Translation Guide maps eight operators onto HEPHAISTOS, Queen Keyport, Hermes and Argus as though the change were a single redistribution. The agent layer above sits between them, and it explains the naming that the translation guide cannot: <strong>Vulcan → HEPHAISTOS is a rename within one mythology, not a functional migration.</strong> The builder agent did not become the forge agent by analysis; it was the forge agent already, under its Roman name.</p>
+      <p>This corroborates the vault’s own substrate note, which reads the stack as an <em>agent-stack-as-Hermetic-Egyptian-theogony</em> pattern traceable to the 2010 MA thesis. On that reading the three-agent stack is not an architecture chosen in April 2026; it is a structure Martin Lepage had already been working with for sixteen years, surfacing in a new medium.</p>
+    </div>
+    <div class="finding" style="margin-top:1rem">
+      <h3>Why this matters for the Foundation packet</h3>
+      <p>The deployment track is evidence, not a distraction. Seven operators in this lineage were built as running GPTs and exercised against real work before the logic was pulled back into specs and skills — the method was tested on a platform, not only argued on paper. Henry ran a three-mode adversarial review protocol as a standalone system, and the paper pipeline is documented in your own vault as its scholarly track. A method that has been instantiated, run, and then re-specified has an empirical history. State it rather than tidying it out.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><span class="num">§5</span><h2>The pipeline inherits the control apparatus</h2></div>
+    <p class="standfirst">The Scholarly Paper Project OS is not a new system built beside this lineage. Its markers, handoffs, gates and finish states are each traceable to a named ancestor, in several cases word for word. What follows pairs the pipeline rule with the artifact it came from.</p>
+
+    <div class="stack">
+      <div class="pairgrid">
+        <div>
+          <span class="lbl">Pipeline · §5.2 Markers over invention</span>
+          <p><code class="path">[SOURCE TO VERIFY]</code> · <code class="path">[PAGE NEEDED]</code> · <code class="path">[CITATION NEEDED]</code> · <code class="path">[DETAIL TO VERIFY]</code></p>
+        </div>
+        <div>
+          <span class="lbl">Ancestor · PHAROS AI Lineage, 2026-03-28</span>
+          <p class="quoteline">Direct · Supported · Thin</p>
+          <p>The pipeline’s markers are a finer-grained fork of the three evidence labels, moved from describing <em>a whole claim</em> to describing <em>a specific missing element</em>. Same discipline, higher resolution.</p>
+        </div>
+      </div>
+
+      <div class="pairgrid">
+        <div>
+          <span class="lbl">Pipeline · §5.3 Handoff before closing</span>
+          <p class="quoteline">What the next node must not undo.</p>
+        </div>
+        <div>
+          <span class="lbl">Ancestor · voice CODE JSON, 2026-02-28</span>
+          <p class="quoteline">SO-SEAM-PROTECT · SO-VOICE-DRIFT-REVERT</p>
+          <p>The two operators that exist <em>only</em> at the machine layer — added because an automated rewriter damages text a person would not — are the direct ancestors of the handoff’s anti-undo clause. The problem was first solved inside a single file, then re-solved across a chain of sessions.</p>
+        </div>
+      </div>
+
+      <div class="pairgrid">
+        <div>
+          <span class="lbl">Pipeline · §4 Author gates A–D</span>
+          <p class="quoteline">The model marks; the author verifies.</p>
+        </div>
+        <div>
+          <span class="lbl">Ancestor · promotion gate, 2026-03-25</span>
+          <p class="quoteline">ready_full · promotion_review_required · auto-promotion disabled · manual operator override required</p>
+          <p>Your three finish states are the promotion gate re-specified for manuscripts. <code class="path">draft-complete</code> is <code class="path">ready_full</code>; <code class="path">verification-cleared</code> is the manual override that cannot be mechanized.</p>
+        </div>
+      </div>
+
+      <div class="pairgrid">
+        <div>
+          <span class="lbl">Pipeline · §6.5 Self-pre-emption without testing</span>
+          <p class="quoteline">The analysis section is the test, not the echo.</p>
+        </div>
+        <div>
+          <span class="lbl">Ancestor · MOBI / Mobius self-polygraph</span>
+          <p class="quoteline">Refuse to convert articulate self-description into proof or ontology.</p>
+          <p>The one failure mode with no Family A equivalent. It is pure Family B, and it is the rule that matters most when the artifact under analysis is one you built.</p>
+        </div>
+      </div>
+
+      <div class="pairgrid">
+        <div>
+          <span class="lbl">Pipeline · §7 What the model does not own</span>
+          <p class="quoteline">The paper’s object and central claim. The decision to submit.</p>
+        </div>
+        <div>
+          <span class="lbl">Ancestor · Agatha authorship rules</span>
+          <p class="quoteline">Alignment without overwrite.</p>
+          <p>The earliest layer in the lineage and the last one still quoted verbatim. Section 7 is that principle converted from a disposition into an enumerated list of non-delegable decisions.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="finding" style="margin-top:1.5rem">
+      <h3>The one rule with no referent</h3>
+      <p>Pipeline rule §5.5 — <em>“Do not collapse the author’s voice… do not flatten the author’s prose into generic academic language”</em> — is the only non-negotiable in the whole OS that defines no test for its own violation. Every other rule names a marker, a gate, or an output file. This one names a prohibition and stops.</p>
+      <p>The genealogy supplies the missing half. <code class="path">Martin's voice CODE.txt</code> already encodes that prohibition as executable checks: <code class="path">DG-GENERIC-SMOOTH</code> fires on high filler-transition rate, <code class="path">DG-BINARY-FLATTEN</code> fires when a both/and structure is rewritten into either/or, <code class="path">DG-CONCEPT-DRIFT</code> fires on term substitution, and <code class="path">FP-EM-DASH</code> and <code class="path">FP-AND-START</code> are literal regex. Wiring §5.5 to that file converts the pipeline’s weakest rule into its most testable one.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><span class="num">§6</span><h2>Operator → node map</h2></div>
+    <p class="standfirst">Which operators govern which node, and how firmly the inheritance can be shown. <span class="chip verbatim">Verbatim</span> means the pipeline restates the operator in words traceable to the spec. <span class="chip derived">Derived</span> means the function matches but the wording is independent — an argument, not a file finding.</p>
+    <div class="twrap">
+      <table>
+        <thead>
+          <tr><th>Node</th><th>Governing operators</th><th class="famcol">Family</th><th>Inheritance</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="nodeid">00</span> Intake &amp; corpus</td>
+            <td>Packet triage — source-bearing / generated / control / presentation</td>
+            <td class="famcol">B</td>
+            <td><span class="chip verbatim">Verbatim</span> Final Operator step 2: <em>“Never collapse these layers into one evidentiary pool.”</em></td>
+          </tr>
+          <tr>
+            <td><span class="nodeid">01</span> Reference tree</td>
+            <td>Evidence hierarchy · trace-investigator mode</td>
+            <td class="famcol">B</td>
+            <td><span class="chip verbatim">Verbatim</span> <code class="path">SOURCE_MATRIX</code> functions reproduce the Final Operator’s triage categories</td>
+          </tr>
+          <tr>
+            <td><span class="nodeid">02</span> Outline architect</td>
+            <td>THESIS-LOCK · CLAIM-LADDER · CONSEQUENCE-ANCHOR</td>
+            <td class="famcol">A</td>
+            <td><span class="chip verbatim">Verbatim</span> v1.4 §3 section architecture <em>is</em> the outline spec: governing claim, definitions, mechanism chain, anchor, stakes, roadmap</td>
+          </tr>
+          <tr>
+            <td><span class="nodeid">03</span> Outline review</td>
+            <td>Reviewer #2 injection · DOTTIE claim audit</td>
+            <td class="famcol">B</td>
+            <td><span class="chip verbatim">Verbatim</span> <em>“treat ambiguity as a problem; distinguish fatal, major, minor; use if-then critiques”</em></td>
+          </tr>
+          <tr>
+            <td><span class="nodeid">04</span> Abstract v1</td>
+            <td>CLAIM-EARLY · COMPRESSION-WITHOUT-STERILIZATION · HEDGE-CALIBRATION</td>
+            <td class="famcol">A</td>
+            <td><span class="chip derived">Derived</span> the abstract is the compression problem v1 named: shorten without summary bleach</td>
+          </tr>
+          <tr>
+            <td><span class="nodeid">05</span> Deep research bundle</td>
+            <td>Evidence hierarchy · CITATION-HYGIENE</td>
+            <td class="famcol">A+B</td>
+            <td><span class="chip derived">Derived</span> <code class="path">CLAIM_TO_SOURCE_MAP</code> operationalises the authority lock: actionable ∩ defensible</td>
+          </tr>
+          <tr>
+            <td><span class="nodeid">06</span> Literature review</td>
+            <td>CITATION-HYGIENE · CITATION-ACTION · TRANSITION-MINIMALISM</td>
+            <td class="famcol">A</td>
+            <td><span class="chip verbatim">Verbatim</span> v1’s <em>Position / Operationalize / Turn</em> is the operational form of <em>“do not merely summarize one source after another”</em></td>
+          </tr>
+          <tr>
+            <td><span class="nodeid">07</span> Lit review validation</td>
+            <td>QUOTE-CONTAINMENT · DOTTIE claim audit</td>
+            <td class="famcol">A+B</td>
+            <td><span class="chip derived">Derived</span> recovers a v1 operator that died after v1 — see the note below</td>
+          </tr>
+          <tr>
+            <td><span class="nodeid">08</span> Conceptual framework</td>
+            <td>NOUN-DISCIPLINE · TERM-LOCK · function-first definitions</td>
+            <td class="famcol">A</td>
+            <td><span class="chip verbatim">Verbatim</span> v1.4 §5: <em>“define by operation, not essence”</em> → <em>“every concept must perform analytic work”</em></td>
+          </tr>
+          <tr>
+            <td><span class="nodeid">09</span> Works cited hardening</td>
+            <td>DUPLICATE-SOURCE-MERGE</td>
+            <td class="famcol">A</td>
+            <td><span class="chip derived">Derived</span> recovers a second v1 operator that died after v1</td>
+          </tr>
+          <tr>
+            <td><span class="nodeid">10</span> Analysis &amp; findings</td>
+            <td>CLAIM-LADDER · CONSEQUENCE-ANCHOR · SCOPE-CLAMP</td>
+            <td class="famcol">A</td>
+            <td><span class="chip verbatim">Verbatim</span> <em>“claim, mechanism, and implication”</em> is CLAIM-LADDER; the domain list is CONSEQUENCE-ANCHOR’s, near word for word</td>
+          </tr>
+          <tr>
+            <td><span class="nodeid">11</span> Discussion</td>
+            <td>CONSEQUENCE-ANCHOR · TWO-SPEED-CLOSE</td>
+            <td class="famcol">A</td>
+            <td><span class="chip verbatim">Verbatim</span> the eight named consequence domains carry over intact</td>
+          </tr>
+          <tr>
+            <td><span class="nodeid">12</span> Conclusion</td>
+            <td>END-WEIGHT · RECURSION-TEST</td>
+            <td class="famcol">A</td>
+            <td><span class="chip verbatim">Verbatim</span> END-WEIGHT: <em>“the implication, not a new idea”</em> → <em>“do not introduce a new argument the paper has not earned”</em></td>
+          </tr>
+          <tr>
+            <td><span class="nodeid">13</span> Abstract revision</td>
+            <td>RECURSION-TEST · self-polygraph</td>
+            <td class="famcol">A+B</td>
+            <td><span class="chip derived">Derived</span> <em>“do not preserve the first abstract out of loyalty”</em> applies the keep-only-if-it-adds test to the paper’s own history</td>
+          </tr>
+          <tr>
+            <td><span class="nodeid">14</span> Introduction</td>
+            <td>THESIS-LOCK · CLAIM-EARLY · anti-smoothing</td>
+            <td class="famcol">A</td>
+            <td><span class="chip verbatim">Verbatim</span> the ban on <em>“In recent years”</em> is v1’s test: if a sentence could belong to any academic author, it fails</td>
+          </tr>
+          <tr>
+            <td><span class="nodeid">15</span> Journal conformity</td>
+            <td>Promotion gate · Argus L99 drift audit</td>
+            <td class="famcol">B</td>
+            <td><span class="chip verbatim">Verbatim</span> conformity audit is the gate; author sign-off is the manual override</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="stack" style="margin-top:1.5rem">
+      <div class="finding">
+        <h3>Two dead operators come back as whole nodes</h3>
+        <p><code class="path">QUOTE-CONTAINMENT</code> and <code class="path">DUPLICATE-SOURCE-MERGE</code> appear in v1 and in nothing after it — the only two operators in the corpus with that profile. Both are reference-management operators, and both reappear in the pipeline promoted from a rewrite rule to a dedicated node with its own outputs (07 and 09). The function was never abandoned; it outgrew the sentence level. That is the clearest single case of the lineage working as designed rather than decaying.</p>
+      </div>
+      <div class="finding">
+        <h3>Family A is inside the nodes; Family B is between them</h3>
+        <p>The division that §1 recovers turns out to be structural, not just terminological. Every prose operator governs what happens <em>within</em> a node — how a paragraph is built, what a citation must do. Every governance operator governs what happens <em>between</em> nodes — what may pass, what must be marked, who signs. The pipeline’s rule 5.4, <em>“no lateral rewrites,”</em> is the seam where the two meet: it is a Family B constraint whose entire purpose is protecting Family A output from downstream tampering.</p>
+      </div>
+      <div class="finding">
+        <span class="chip verbatim">Resolved 2026-07-30</span>
+        <h3>Author name corrected at the spec</h3>
+        <p>The author is <strong>Martin Lepage</strong>. The pipeline spec carried a corrupted variant in five places, not four — two in <code class="path">Per-Paper Project Structure</code> and three in <code class="path">Chat Node Instructions</code>, including the Node 15 conformity defaults. Node 15 therefore audited <em>for</em> the error, meaning conformity review would have confirmed it on every title page rather than catching it.</p>
+        <p>All five are fixed; zero variants remain in either file. Still outstanding: add the name to <code class="path">STYLE_RULES.md</code> as a fixed value no node may alter, so a future node cannot reintroduce it.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><span class="num">§7</span><h2>Contradictions and gaps</h2></div>
+    <div class="stack">
+      <div class="finding alert">
+        <h3>Every canonical source path in the vault is stale by one drive letter</h3>
+        <p>The <em>Version Genealogy</em> note (updated 2026-06-26) cites its sources as <code class="path">/mnt/d/MASTER PACK/...</code>. Those artifacts are on <code class="path">E:\</code> and have been since at least the 2026-07-30 scan, which records them under <code class="path">E:\</code> throughout. Same files, same hashes, unreachable paths. Any loader resolving the genealogy’s own source list fails.</p>
+      </div>
+      <div class="finding alert">
+        <h3>The Eight Operators were deprecated six weeks before they were documented</h3>
+        <p>The note is dated <code class="path">created: 2026-04-18</code> and carries <code class="path">deprecation_effective_date: 2026-03-01</code>. The migration guide compounds this, listing “2026-03-02 to 2026-04-22 — Three-Agent Stack was operating, but old operator mental model persisted.” So the source document for the architecture is a record of a conversation held while the architecture was already retired. It is reconstruction presented with the frontmatter of a specification.</p>
+      </div>
+      <div class="finding alert">
+        <h3>Level 0 authority is a pointer with no content</h3>
+        <p><code class="path">00_ROOT_VOICE_SPEC_V1_PRIMARY_IMPLEMENTATION.md</code> is declared “the canonical voice-spec authority for rebuild governance checks.” It is 418 bytes and contains four bullet points about where canonical edits occur. It holds no voice rules. Validation against it can only ever confirm that a pointer exists.</p>
+      </div>
+      <div class="finding alert">
+        <h3>The vault records two operators as unpublished. They ran.</h3>
+        <p><code class="path">Custom GPT Products — PHAROS AI GPT Roster</code> files DOTTIE and MOBI under <em>“STATUS UNCLEAR — Not Found in GPT List”</em>, and the 2026-07-30 metadata check hardened that into a standing instruction: <em>“Keep DOTTIE and MOBI/Mobius in internal-persona status unless a missing ChatGPT export or product record is recovered.”</em> Both were built and run as GPTs. Dot.cmd was missed because the sweep searched the persona name rather than the deployed one.</p>
+        <p>The mechanism is worth naming, because it will recur: a negative result from an automated scan hardened into a positive claim about the world. Nothing in the note was false — no URL <em>was</em> found — but “not found” was recorded as “not published,” and then cited downstream as settled. Three notes now carry the wrong status.</p>
+      </div>
+      <div class="finding">
+        <h3>What is genuinely unrecovered</h3>
+        <p>Two things, not four. There is no <code class="path">Martin Voice Spec v2</code> — by design, since v2 is a manifest stage rather than a document. And <code class="path">Unified Martin Voice Spec v4.0</code>, the current labeled version, exists only inside a PDF filed under a different name (<code class="path">AI GOV CONSTITUTION.pdf</code>). I located that PDF on E: this session but did not open it; the v4.0 identification is inherited from the vault, not re-verified here.</p>
+        <p>The Dot.cmd and MOBI specifications are not lost — they are held in the GPT builder rather than on disk. That is a different problem: an operator whose authoritative text lives on a platform you do not control has no local provenance, and no version history you can audit. Exporting both is the cheapest gap to close in this whole genealogy.</p>
+      </div>
+      <div class="finding alert">
+        <h3>The pipeline has never been run. Nothing is scaffolded.</h3>
+        <p>A recursive search of E: and EMERAULD returns zero instances of <code class="path">MODEL_HANDOFF_LOG.md</code>, <code class="path">CLAIM_REGISTER.md</code>, <code class="path">UNCERTAINTY_REGISTER.md</code>, <code class="path">PROJECT_BRIEF.md</code>, <code class="path">SECTION_PLAN.md</code>, <code class="path">DEEP_RESEARCH.md</code> or <code class="path">SUBMISSION_CHECKLIST.md</code>. No <code class="path">00_PROJECT_CONTROL</code> directory exists. No <code class="path">papers/</code> directory exists. The sixteen-node OS is fully specified and entirely unbuilt.</p>
+        <p>There is also a name mismatch that blocks loading. The Routine Spec §8 instructs the session to load <code class="path">PROJECT_OS.md</code> and <code class="path">papers/&lt;week&gt;-&lt;slug&gt;/00_PROJECT_CONTROL/MODEL_HANDOFF_LOG.md</code>. No file called <code class="path">PROJECT_OS.md</code> exists anywhere; the specification lives as three Obsidian notes under <code class="path">Areas/Writing/</code> with entirely different names. This is the same failure as the stale <code class="path">/mnt/d/</code> paths above — a governing document whose own load instructions do not resolve.</p>
+        <p>The gate logic itself is sound and handles the empty case: <em>“If no handoff log exists, the paper is at zero. Run Node 00.”</em> What is missing is the scaffold and a real <code class="path">PROJECT_OS.md</code> at the path the spec names. Both are cheap to create and both are prerequisites for the first Foundation paper.</p>
+      </div>
+      <div class="finding">
+        <h3>Scan boundary</h3>
+        <p>Your CLAUDE.md names <code class="path">pharos-martin-direct</code> as the canonical host for the three-agent contracts. SSH to <code class="path">34.19.154.205:22</code> timed out this session. Everything above is drawn from <code class="path">E:\</code> and the local WSL EMERAULD merge dated 2026-07-29. If the canonical host has diverged, this genealogy does not know it.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><span class="num">§8</span><h2>Source ledger</h2></div>
+    <div class="twrap">
+      <table>
+        <thead>
+          <tr><th>Artifact</th><th class="num">Modified</th><th class="num">Bytes</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code class="path">E:\MASTER PACK\MASTERxMASTERxMASTER\MARTIN voice specs.pdf</code></td><td class="num">2026‑02‑17</td><td class="num">85,141</td><td><span class="chip supported">Not opened</span></td></tr>
+          <tr><td><code class="path">E:\LIBRARY\Not_Mine\thesis\Martin Voice Spec v1.4 (7030 + Disruption Medium).txt</code></td><td class="num">2026‑02‑21</td><td class="num">8,469</td><td><span class="chip direct">Read in full</span></td></tr>
+          <tr><td><code class="path">E:\CODEX\paper.builder\Martin's voice CODE.txt</code></td><td class="num">2026‑02‑28</td><td class="num">17,067</td><td><span class="chip direct">Read + hashed</span></td></tr>
+          <tr><td><code class="path">E:\CODEX\HENRY\HENRY voice CODE.txt</code></td><td class="num">2026‑03‑08</td><td class="num">16,413</td><td><span class="chip direct">Read + hashed</span></td></tr>
+          <tr><td><code class="path">E:\MASTER PACK\APEX_PAPERS_COMMON\COMPRESS\Martin Voice Spec v1.txt</code></td><td class="num">2026‑03‑25*</td><td class="num">27,959</td><td><span class="chip direct">Read in full</span></td></tr>
+          <tr><td><code class="path">E:\MASTER PACK\APEX_PAPERS_COMMON\COMPRESS\Martin Voice Spec v3 OFFICIAL.pdf</code></td><td class="num">2026‑03‑25*</td><td class="num">150,304</td><td><span class="chip supported">Not opened</span></td></tr>
+          <tr><td><code class="path">E:\MASTER PACK\LAST_VOICE_OPERATOR_GPT_CREATOR.md</code></td><td class="num">2026‑03‑28</td><td class="num">15,313</td><td><span class="chip direct">Read in full</span></td></tr>
+          <tr><td><code class="path">E:\MASTER PACK\PHAROS_AI_LINEAGE_SOURCE_OF_TRUTH.md</code></td><td class="num">2026‑03‑28</td><td class="num">17,577</td><td><span class="chip direct">Read in full</span></td></tr>
+          <tr><td><code class="path">E:\PHAROS METHOD REPOSITORY\...\00_ROOT_VOICE_SPEC_V1_PRIMARY_IMPLEMENTATION.md</code></td><td class="num">2026‑04‑04</td><td class="num">418</td><td><span class="chip direct">Read in full</span></td></tr>
+          <tr><td><code class="path">E:\PHAROS METHOD REPOSITORY\...\02_GOVREV_AIGOV1_VOICEOP1_CLASSIFICATION.md</code></td><td class="num">2026‑04‑04</td><td class="num">—</td><td><span class="chip direct">Read in full</span></td></tr>
+          <tr><td><code class="path">E:\PHAROS METHOD REPOSITORY\...\02_GOVREV_AIGOV2_VOICEOP2_CLASSIFICATION.md</code></td><td class="num">2026‑04‑04</td><td class="num">—</td><td><span class="chip direct">Read in full</span></td></tr>
+          <tr><td><code class="path">E:\LIBRARY\LAST_VOICE_OPERATOR_GPT_CREATOR-2026-04-16.md</code></td><td class="num">2026‑04‑24</td><td class="num">15,313</td><td><span class="chip supported">Duplicate of 03‑28</span></td></tr>
+          <tr><td><code class="path">EMERAULD/wiki/genealogy/Martin Voice Spec — Version Genealogy.md</code></td><td class="num">2026‑06‑26</td><td class="num">—</td><td><span class="chip direct">Read in full</span></td></tr>
+          <tr><td><code class="path">EMERAULD/wiki/genealogy/Martin Voice Spec — Stage Map.md</code></td><td class="num">2026‑06‑26</td><td class="num">—</td><td><span class="chip direct">Read in full</span></td></tr>
+          <tr><td><code class="path">EMERAULD/Areas/PHAROS/Architecture Translation Guide — Eight Operators...md</code></td><td class="num">2026‑06‑26</td><td class="num">—</td><td><span class="chip direct">Read in full</span></td></tr>
+          <tr><td><code class="path">EMERAULD/wiki/genealogy/Voice Operator Lineage - Metadata Resolution 2026-07-30.md</code></td><td class="num">2026‑07‑30</td><td class="num">—</td><td><span class="chip direct">Read in full</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:0.8rem;font-size:0.82rem;color:var(--muted)">* 2026‑03‑25 timestamps across MASTER PACK indicate a bulk copy, not authorship. Per the 2026‑07‑30 metadata rules, CreationTime values near 2026‑05‑09 are import times and were excluded from the chronology.</p>
+  </section>
+
+  <footer>
+    <p>Assembled 2026‑07‑30 from a recursive scan of <code class="path">E:\</code> and the EMERAULD snapshot <code class="path">merge-20260729-210449</code>. Claims marked Direct rest on files opened and hashed in this session. Claims marked Supported or Thin are inherited from prior vault work and carry that work’s evidence labels unchanged. Where author testimony contradicts a file-based inference — the GPT instantiation track, the status of Dot.cmd and MOBI — the testimony governs and the superseded inference is named rather than deleted. The canonical host was unreachable and was not consulted.</p>
+  </footer>
+
+</div>

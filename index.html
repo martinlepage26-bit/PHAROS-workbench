@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PHAROS Workbench</title>
+  <meta name="description" content="Browser-openable PHAROS method-formation registers, timelines, and corpus maps.">
+  <style>
+    :root {
+      --bg: #faf9f7;
+      --panel: #ffffff;
+      --ink: #1c1b1a;
+      --soft: #57534e;
+      --faint: #8b8681;
+      --line: #e7e3dd;
+      --line2: #efece7;
+      --accent: #4f46e5;
+      --accent-soft: #eef0fb;
+      --pub: #0f7a52;
+      --pub-bg: #e6f4ee;
+      --draft: #8a6d1f;
+      --draft-bg: #f7f0dc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 500px at 10% -10%, #eef0fb 0%, transparent 55%),
+        radial-gradient(900px 400px at 100% 0%, #f7f0dc 0%, transparent 50%),
+        var(--bg);
+      line-height: 1.5;
+    }
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 4rem;
+    }
+    header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      font-size: .75rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+      background: var(--accent-soft);
+      border: 1px solid #d9ddf8;
+      border-radius: 999px;
+      padding: .28rem .7rem;
+      margin-bottom: .9rem;
+    }
+    h1 {
+      margin: 0 0 .5rem;
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      letter-spacing: -.02em;
+      line-height: 1.15;
+    }
+    .lede {
+      margin: 0;
+      max-width: 46rem;
+      color: var(--soft);
+      font-size: 1.05rem;
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .6rem 1rem;
+      margin-top: 1rem;
+      color: var(--faint);
+      font-size: .9rem;
+    }
+    .meta code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .82rem;
+      background: var(--line2);
+      padding: .12rem .4rem;
+      border-radius: .3rem;
+      color: var(--soft);
+    }
+    section { margin-top: 2rem; }
+    h2 {
+      margin: 0 0 1rem;
+      font-size: 1rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--faint);
+      font-weight: 600;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+    a.card {
+      display: flex;
+      flex-direction: column;
+      gap: .55rem;
+      text-decoration: none;
+      color: inherit;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1.1rem 1.15rem 1.15rem;
+      box-shadow: 0 1px 0 rgba(28, 27, 26, .03);
+      transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+      min-height: 148px;
+    }
+    a.card:hover, a.card:focus-visible {
+      border-color: #c7cbf0;
+      box-shadow: 0 8px 24px rgba(79, 70, 229, .08);
+      transform: translateY(-1px);
+      outline: none;
+    }
+    .tag {
+      align-self: flex-start;
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      border-radius: 999px;
+      padding: .2rem .55rem;
+    }
+    .tag.primary { color: var(--accent); background: var(--accent-soft); }
+    .tag.method { color: var(--pub); background: var(--pub-bg); }
+    .tag.corpus { color: #6b3fa0; background: #f2eafd; }
+    .tag.source { color: var(--draft); background: var(--draft-bg); }
+    .card h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: -.01em;
+      line-height: 1.3;
+    }
+    .card p {
+      margin: 0;
+      color: var(--soft);
+      font-size: .92rem;
+      flex: 1;
+    }
+    .path {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+      color: var(--faint);
+    }
+    .note {
+      margin-top: 2.25rem;
+      padding: 1rem 1.15rem;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--soft);
+      font-size: .92rem;
+    }
+    .note strong { color: var(--ink); }
+    footer {
+      margin-top: 2.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--line);
+      color: var(--faint);
+      font-size: .85rem;
+    }
+    footer a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">PHAROS · Method Formation</div>
+      <h1>PHAROS Workbench</h1>
+      <p class="lede">
+        Browser-openable registers, timelines, and maps for the PHAROS method-formation
+        corpus. Each file is a standalone HTML artifact — open it, share the URL, no build step.
+      </p>
+      <div class="meta">
+        <span>Hub: <code>index.html</code></span>
+        <span>Artifacts: <code>files/&lt;name&gt;.html</code></span>
+        <span>Repo: <code>martinlepage26-bit/PHAROS-workbench</code></span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Primary surfaces</h2>
+      <div class="grid">
+        <a class="card" href="files/paper-register.html">
+          <span class="tag primary">Register</span>
+          <h3>The Register</h3>
+          <p>Positions ordered by role in method formation — the working paper ledger.</p>
+          <span class="path">files/paper-register.html</span>
+        </a>
+        <a class="card" href="files/corpus-full-list.html">
+          <span class="tag corpus">Corpus</span>
+          <h3>The Corpus, Normalized</h3>
+          <p>Full normalized corpus list across Before, During, Books, and Fictions.</p>
+          <span class="path">files/corpus-full-list.html</span>
+        </a>
+        <a class="card" href="files/method-formation-atlas.html">
+          <span class="tag method">Atlas</span>
+          <h3>Method Formation Atlas</h3>
+          <p>Unified visual atlas coordinating the method-formation sources.</p>
+          <span class="path">files/method-formation-atlas.html</span>
+        </a>
+        <a class="card" href="files/method-formation-timeline.html">
+          <span class="tag method">Timeline</span>
+          <h3>Method Formation Timeline</h3>
+          <p>How the method took shape over time (canonical OFFICIAL timeline).</p>
+          <span class="path">files/method-formation-timeline.html</span>
+        </a>
+        <a class="card" href="files/method-formation-public-timeline.html">
+          <span class="tag method">Public</span>
+          <h3>Public Timeline</h3>
+          <p>Public-facing narrative of method formation — how the method took shape.</p>
+          <span class="path">files/method-formation-public-timeline.html</span>
+        </a>
+        <a class="card" href="files/intellectual-arc.html">
+          <span class="tag source">Arc</span>
+          <h3>Intellectual Arc</h3>
+          <p>How Agatha became a governance method — the intellectual through-line.</p>
+          <span class="path">files/intellectual-arc.html</span>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <h2>Lineage &amp; comparison</h2>
+      <div class="grid">
+        <a class="card" href="files/timeline-register-vs-voice-operator.html">
+          <span class="tag source">Compare</span>
+          <h3>Register vs Voice Operator</h3>
+          <p>Sixteen years and five months — the register against the voice-operator lineage.</p>
+          <span class="path">files/timeline-register-vs-voice-operator.html</span>
+        </a>
+        <a class="card" href="files/voice-operator-genealogy.html">
+          <span class="tag source">Genealogy</span>
+          <h3>Voice Operator Specs</h3>
+          <p>Genealogy of the voice-operator specifications that feed the method story.</p>
+          <span class="path">files/voice-operator-genealogy.html</span>
+        </a>
+      </div>
+    </section>
+
+    <div class="note">
+      <strong>URL pattern.</strong>
+      After GitHub Pages is live, open the hub at
+      <code>https://martinlepage26-bit.github.io/PHAROS-workbench/</code>
+      and individual files at
+      <code>https://martinlepage26-bit.github.io/PHAROS-workbench/files/&lt;file&gt;.html</code>.
+      Sources remain authoritative in <code>PHAROS-OFFICIAL</code> / local registers; this repo is the published workbench surface.
+    </div>
+
+    <footer>
+      PHAROS Workbench · Martin Lepage ·
+      <a href="https://github.com/martinlepage26-bit/PHAROS-workbench">GitHub</a>
+    </footer>
+  </div>
+</body>
+</html>
