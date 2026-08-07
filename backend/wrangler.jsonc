@@ -4,7 +4,10 @@
   "compatibility_date": "2026-03-01",
   "account_id": "1713c51cc6fbcf8d7143526b93495b76",
   "workers_dev": true,
-  "observability": { "enabled": true, "head_sampling_rate": 1 },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
@@ -22,6 +25,6 @@
   ],
   "vars": {
     "BOARD_ID": "main",
-    "CORS_ORIGINS": "https://martinlepage26-bit.github.io,https://pharos-workbench-api.martinlepage26.workers.dev,http://127.0.0.1:8765,http://localhost:8765,null"
+    "CORS_ORIGINS": "https://pharos-workbench-api.martinlepage26.workers.dev,https://martinlepage26-bit.github.io,http://127.0.0.1:8765,http://localhost:8765"
   }
 }

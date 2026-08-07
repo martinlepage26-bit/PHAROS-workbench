@@ -1,26 +1,31 @@
-# Pharos Workbench — secure host
+# Pharos Workbench — architecture (post-remediation)
 
-## Canonical URL
+## Canonical host
 
 **https://pharos-workbench-api.martinlepage26.workers.dev/**
 
-- Same-origin UI + API on Cloudflare Worker
-- Auth: **HttpOnly / Secure / SameSite=Lax** cookie `wb_session`
-- No API key in page source
-- Board state: Cloudflare **D1** `pharos-workbench`
+| Layer | Path |
+|-------|------|
+| UI shell | `backend/public/index.html` |
+| Styles | `backend/public/css/app.css` |
+| Client JS | `backend/public/js/{app,api,model,render}.js` |
+| API | `backend/src/{index,auth,board,default-board}.ts` |
+| DB | D1 `pharos-workbench` |
+| Auth | HttpOnly cookie `wb_session` (or Bearer for tools) |
 
-## Bootstrap (once per browser)
+Board data is **server-owned**. Client SEED is gone; empty boards get `defaultBoardData()` from the Worker.
+
+## Login
 
 ```bash
 KEY=$(cat ~/.secrets/pharos-workbench-api-key.txt)
-xdg-open "https://pharos-workbench-api.martinlepage26.workers.dev/api/session/bootstrap?key=${KEY}"
+# browser form on the site, or:
+curl -X POST https://pharos-workbench-api.martinlepage26.workers.dev/api/session/login \
+  -H 'content-type: application/json' \
+  -d "{\"key\":\"$KEY\"}" -c cookies.txt
+# break-glass bootstrap (sets cookie + redirect):
+xdg-open "https://pharos-workbench-api.martinlepage26.workers.dev/api/session/bootstrap?key=$KEY"
 ```
-
-Or open that URL manually. It sets the cookie and redirects to `/`.
-
-## GitHub Pages
-
-https://martinlepage26-bit.github.io/PHAROS-workbench/ redirects to the Worker.
 
 ## Deploy
 

@@ -1,4 +1,23 @@
-**Secure host:** https://pharos-workbench-api.martinlepage26.workers.dev/ (Worker UI + D1 + HttpOnly cookie — no API key in HTML)
+# PHAROS Workbench
+
+**Secure host:** https://pharos-workbench-api.martinlepage26.workers.dev/
+
+Decomposed app (post code-review remediation):
+
+| Layer | Location | Notes |
+|-------|----------|--------|
+| UI shell | `backend/public/index.html` | ~150 lines |
+| CSS | `backend/public/css/app.css` | |
+| Client | `backend/public/js/*.js` | modules + `data-action` dispatcher |
+| API | `backend/src/*.ts` | auth / board / default-board |
+| DB | Cloudflare D1 | server-owned board |
+| Auth | HttpOnly cookie | query-key auth removed |
+
+GitHub Pages root only redirects to the Worker.
+
+See [BACKEND_SETUP.md](./BACKEND_SETUP.md).
+
+---
 
 # PHAROS Workbench
 
