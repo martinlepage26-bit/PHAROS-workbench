@@ -33,23 +33,23 @@ export function extractUrls(text) {
 function guessLinkLabel(url, index) {
   const u = (url || "").toLowerCase();
   if (u.startsWith("mailto:")) return "Email";
-  if (u.includes("openai.com") || u.includes("chatgpt.com")) return "OpenAI billing";
+  if (u.includes("openai.com") || u.includes("chatgpt.com")) return "OpenAI";
   if (u.includes("stripe.com")) return "Stripe";
   if (u.includes("shopify.com")) return "Shopify";
   if (u.includes("apple.com") || u.includes("reportaproblem.apple.com"))
     return "Apple";
   if (u.includes("base44")) return "Base44";
-  if (u.includes("mail.google.com") || u.includes("gmail.com")) return "Open email";
+  if (u.includes("mail.google.com") || u.includes("gmail.com")) return "Email";
   if (u.includes("drive.google.com") || u.includes("docs.google.com"))
-    return "Open Drive";
-  if (u.includes("granola.ai")) return "Open meeting";
-  if (u.includes("github.com")) return "Open on GitHub";
-  if (u.includes("calendar.google.com")) return "Open calendar";
+    return "Drive";
+  if (u.includes("granola.ai")) return "Meeting";
+  if (u.includes("github.com")) return "GitHub";
+  if (u.includes("calendar.google.com")) return "Calendar";
   try {
     const host = new URL(url).hostname.replace(/^www\./, "");
-    return host || "Open link";
+    return host || "Go";
   } catch {
-    return index === 0 ? "Open" : "Open link " + (index + 1);
+    return index === 0 ? "Go" : "Link " + (index + 1);
   }
 }
 
@@ -96,8 +96,8 @@ export function emptyBoard() {
   return {
     version: 3,
     meta: {
-      title: "Pharos · Workbench",
-      subtitle: "Loading…",
+      title: "Pharos",
+      subtitle: "What needs you",
       asOf: "",
       windowNewest: "",
       snap: "",

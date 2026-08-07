@@ -26,13 +26,12 @@ export function bindMeta(state) {
   const title = document.getElementById("page-title");
   const sub = document.getElementById("page-subtitle");
   if (title) title.textContent = state.meta?.title || "Pharos";
-  if (sub) sub.textContent = state.meta?.subtitle || "Your work board";
-  document.title = state.meta?.title || "Pharos Workbench";
+  if (sub) sub.textContent = state.meta?.subtitle || "What needs you";
+  document.title = state.meta?.title || "Pharos";
   const foot = document.getElementById("footer-note");
   if (foot) {
     foot.textContent =
-      state.meta?.footer ||
-      "Changes save automatically when you are signed in.";
+      state.meta?.footer || "Saves when you’re signed in.";
   }
 }
 
@@ -49,15 +48,15 @@ function renderLinks(state) {
         }>${esc(l.label)}</a>`;
       })
       .join("") +
-    `<button type="button" class="chip-link edit-links" data-action="link.add">+ Link</button>`;
+    `<button type="button" class="chip-link edit-links" data-action="link.add">+</button>`;
 }
 
 function renderPipeline(block) {
   const stages = block.stages || [];
   if (!stages.length) {
-    return `<div class="empty">No paper steps yet.</div>
+    return `<div class="empty">No steps yet.</div>
       <div class="card-foot">
-        <button class="btn sm" type="button" data-action="pipe.add">+ Add step</button>
+        <button class="btn sm" type="button" data-action="pipe.add">Add step</button>
       </div>`;
   }
   return (
@@ -84,7 +83,7 @@ function renderPipeline(block) {
       .join("") +
     `</div>
     <div class="card-foot">
-      <button class="btn sm" type="button" data-action="pipe.add">+ Add step</button>
+      <button class="btn sm" type="button" data-action="pipe.add">Add step</button>
     </div>`
   );
 }
@@ -92,7 +91,7 @@ function renderPipeline(block) {
 function actionLinksOf(item) {
   const links = Array.isArray(item.links) ? item.links.filter((l) => l && l.url) : [];
   if (links.length) return links;
-  if (item.url) return [{ label: "Open", url: item.url }];
+  if (item.url) return [{ label: "Go", url: item.url }];
   return [];
 }
 
@@ -102,7 +101,7 @@ function renderItem(section, item, index) {
     ? `<span class="who">${esc(item.source)}</span>${item.text ? " — " : ""}`
     : "";
   const text = item.text ? esc(item.text) : "";
-  const main = `${who}${text}` || "<span class='empty'>Empty task</span>";
+  const main = `${who}${text}` || "<span class='empty'>Empty</span>";
   const tag = item.tag
     ? `<span class="tag ${tagClass(item.tagKind)}">${esc(item.tag)}</span>`
     : item.kind
@@ -113,14 +112,14 @@ function renderItem(section, item, index) {
     ? `<div class="action-links">${actions
         .map(
           (l, i) =>
-            `<a class="action-btn${i === 0 ? " primary" : ""}" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label || "Open")}</a>`
+            `<a class="action-btn${i === 0 ? " primary" : ""}" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label || "Go")}</a>`
         )
         .join("")}</div>`
     : "";
 
   return `
     <div class="row${actions.length ? " has-actions" : ""}">
-      <div class="when">${esc(item.time || "—")}</div>
+      <div class="when">${esc(item.time || "")}</div>
       <div class="what">
         <div class="what-main">${main}</div>
         ${tag ? `<div class="tag-row">${tag}</div>` : ""}
@@ -157,12 +156,12 @@ function renderListBlock(sec, listIndex, listCount) {
       </div>
       ${
         sec.linkUrl
-          ? `<a class="glink" href="${esc(sec.linkUrl)}" target="_blank" rel="noopener">${esc(sec.linkLabel || "Open →")}</a>`
+          ? `<a class="glink" href="${esc(sec.linkUrl)}" target="_blank" rel="noopener">${esc(sec.linkLabel || "Open")}</a>`
           : ""
       }
       <div class="card-foot">
-        <button class="btn sm primary" type="button" data-action="item.add" data-section="${esc(sec.id)}">+ Add</button>
-        <button class="btn sm ghost" type="button" data-action="section.edit" data-id="${esc(sec.id)}">Edit list</button>
+        <button class="btn sm primary" type="button" data-action="item.add" data-section="${esc(sec.id)}">Add</button>
+        <button class="btn sm ghost" type="button" data-action="section.edit" data-id="${esc(sec.id)}">Edit</button>
       </div>
     </div>`;
 }
@@ -180,7 +179,7 @@ export function renderBoard(state, _onMeta) {
   let html = `
     <div class="card full">
       <div class="card-head">
-        <h2 class="sec-title">${esc(pipe.title || "Paper writing steps")}</h2>
+        <h2 class="sec-title">${esc(pipe.title || "Paper path")}</h2>
         <span class="count">${(pipe.stages || []).length}</span>
       </div>
       ${renderPipeline(pipe)}

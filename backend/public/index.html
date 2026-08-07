@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pharos Workbench</title>
-  <!-- action-links-1786141912 -->
-  <meta name="description" content="Your PHAROS work board — tasks, meetings, papers, EMERAULD.">
+  <title>Pharos</title>
+  <!-- diamond-eyes-1 -->
+  <meta name="description" content="Pharos work board — what needs you, with the link to do it.">
   <meta name="theme-color" content="#faf9f7">
   <link rel="stylesheet" href="/css/app.css">
 </head>
@@ -14,20 +14,20 @@
   <div class="topbar">
     <div class="brand">
       <h1 id="page-title">Pharos</h1>
-      <p id="page-subtitle">Your work board</p>
+      <p id="page-subtitle">What needs you</p>
     </div>
-    <span class="status-pill" id="status-pill">Connecting…</span>
+    <span class="status-pill" id="status-pill">…</span>
     <div class="actions-bar">
-      <button class="btn primary" type="button" data-action="item.add">+ Add task</button>
-      <button class="btn" type="button" data-action="section.add">+ List</button>
+      <button class="btn primary" type="button" data-action="item.add">Add</button>
+      <button class="btn" type="button" data-action="section.add">New list</button>
       <div class="more-menu">
-        <button class="btn menu-toggle" type="button" data-action="menu.toggle" aria-expanded="false">More ▾</button>
+        <button class="btn menu-toggle" type="button" data-action="menu.toggle" aria-expanded="false">More</button>
         <div class="more-panel" id="more-panel">
           <button class="btn" type="button" data-action="sync">Save now</button>
-          <button class="btn" type="button" data-action="pipe.add">Add paper step</button>
+          <button class="btn" type="button" data-action="pipe.add">Paper step</button>
           <button class="btn" type="button" data-action="export">Download backup</button>
           <button class="btn" type="button" data-action="import">Restore backup</button>
-          <button class="btn" type="button" data-action="reset">Start fresh</button>
+          <button class="btn" type="button" data-action="reset">Start clean</button>
         </div>
       </div>
     </div>
@@ -35,48 +35,47 @@
   </div>
 
   <div class="session-banner" id="session-banner">
-    <span><strong>Sign in</strong> to save your board in the cloud. Paste your access key:</span>
-    <input id="session-key" type="password" placeholder="Access key" autocomplete="off">
-    <button class="btn primary" type="button" data-action="session.login">Sign in</button>
+    <span><strong>Sign in</strong> to keep this board.</span>
+    <input id="session-key" type="password" placeholder="Your key" autocomplete="off">
+    <button class="btn primary" type="button" data-action="session.login">Continue</button>
   </div>
 
-  <div class="quick-links" id="nav-links" aria-label="Quick links"></div>
+  <div class="quick-links" id="nav-links" aria-label="Shortcuts"></div>
   <div class="grid" id="board"></div>
-  <footer id="footer-note">Changes save automatically when you are signed in.</footer>
+  <footer id="footer-note">Saves when you’re signed in.</footer>
 </div>
 
-<!-- Add / edit task -->
 <div class="modal-bg" id="modal-item" role="dialog" aria-modal="true" aria-labelledby="modal-item-title">
   <div class="modal">
     <h3 id="modal-item-title">Task</h3>
-    <p class="help">Keep it short — what needs doing, and who or what it is about.</p>
+    <p class="help">Name it. If there’s a place to act, put the link.</p>
     <label for="m-section">List</label>
     <select class="field" id="m-section"></select>
     <label for="m-text">What</label>
-    <textarea class="field" id="m-text" rows="3" placeholder="e.g. Pay OpenAI invoice — paste email text; links are detected"></textarea>
-    <label for="m-source">Who / source (optional)</label>
-    <input class="field" id="m-source" placeholder="e.g. Stripe, Patricia, GitHub">
-    <label for="m-time">When (optional)</label>
-    <input class="field" id="m-time" placeholder="e.g. today, Aug 12, 18:30">
-    <label for="m-url">Main action link</label>
-    <input class="field" id="m-url" placeholder="https://… invoice, email, or page to open">
-    <label for="m-url-label">Button label (optional)</label>
-    <input class="field" id="m-url-label" placeholder="e.g. Pay invoice, Open email">
-    <label for="m-more-links">More action links (optional)</label>
-    <textarea class="field" id="m-more-links" rows="3" placeholder="One per line:&#10;Open email | https://mail.google.com/…&#10;https://billing.example.com/…"></textarea>
-    <p class="help" style="margin-top:6px">If the email or note includes URLs, they are added automatically as buttons.</p>
-    <button type="button" class="toggle-advanced" data-action="toggle-advanced">More options</button>
+    <textarea class="field" id="m-text" rows="3" placeholder="Pay the OpenAI bill — paste the email if you have it"></textarea>
+    <label for="m-source">From</label>
+    <input class="field" id="m-source" placeholder="OpenAI, Patricia, Stripe…">
+    <label for="m-time">When</label>
+    <input class="field" id="m-time" placeholder="Today, Thu, 18:30">
+    <label for="m-url">Where to act</label>
+    <input class="field" id="m-url" placeholder="https://…">
+    <label for="m-url-label">Button says</label>
+    <input class="field" id="m-url-label" placeholder="Pay invoice">
+    <label for="m-more-links">Other links</label>
+    <textarea class="field" id="m-more-links" rows="2" placeholder="Label | https://…&#10;or paste more URLs"></textarea>
+    <p class="help" style="margin-top:6px">Links in the text become buttons on their own.</p>
+    <button type="button" class="toggle-advanced" data-action="toggle-advanced">Details</button>
     <div class="advanced" id="item-advanced">
-      <label for="m-tag">Label</label>
-      <input class="field" id="m-tag" placeholder="e.g. urgent, waiting">
-      <label for="m-tag-kind">Label color</label>
+      <label for="m-tag">Tag</label>
+      <input class="field" id="m-tag" placeholder="urgent, waiting">
+      <label for="m-tag-kind">Tag color</label>
       <select class="field" id="m-tag-kind">
-        <option value="">Normal</option>
-        <option value="c-money">Red — money / urgent</option>
-        <option value="c-decision">Amber — decision</option>
-        <option value="c-ok">Green — done / ok</option>
+        <option value="">Default</option>
+        <option value="c-money">Red — money</option>
+        <option value="c-decision">Amber — decide</option>
+        <option value="c-ok">Green — settled</option>
       </select>
-      <label for="m-kind">File type badge</label>
+      <label for="m-kind">Type</label>
       <select class="field" id="m-kind">
         <option value="">None</option>
         <option value="DOC">DOC</option>
@@ -90,74 +89,71 @@
     <div class="actions">
       <button class="btn danger" type="button" data-action="item.modal-delete" style="margin-right:auto" id="m-delete">Delete</button>
       <button class="btn ghost" type="button" data-action="modal.close">Cancel</button>
-      <button class="btn primary" type="button" data-action="item.save">Save task</button>
+      <button class="btn primary" type="button" data-action="item.save">Save</button>
     </div>
   </div>
 </div>
 
-<!-- List settings -->
 <div class="modal-bg" id="modal-section" role="dialog" aria-modal="true">
   <div class="modal">
     <h3 id="modal-section-title">List</h3>
-    <p class="help">A list is a group of tasks — like “To do” or “Meetings”.</p>
+    <p class="help">A quiet shelf for related work.</p>
     <label for="s-title">Name</label>
-    <input class="field" id="s-title" placeholder="e.g. To do this week">
+    <input class="field" id="s-title" placeholder="Needs you">
     <label for="s-layout">Width</label>
     <select class="field" id="s-layout">
-      <option value="half">Half page</option>
-      <option value="full">Full width</option>
+      <option value="half">Half</option>
+      <option value="full">Full</option>
     </select>
-    <label for="s-style">Look</label>
+    <label for="s-style">Tone</label>
     <select class="field" id="s-style">
-      <option value="normal">Normal</option>
-      <option value="alert">Highlight (red edge)</option>
+      <option value="normal">Quiet</option>
+      <option value="alert">Urgent</option>
     </select>
-    <label for="s-empty">Message when empty</label>
-    <input class="field" id="s-empty" placeholder="Nothing here yet">
-    <label for="s-link-label">Optional link label</label>
-    <input class="field" id="s-link-label" placeholder="Open full list">
-    <label for="s-link-url">Optional link address</label>
+    <label for="s-empty">When empty</label>
+    <input class="field" id="s-empty" placeholder="Nothing here.">
+    <label for="s-link-label">List link label</label>
+    <input class="field" id="s-link-label" placeholder="Open all">
+    <label for="s-link-url">List link</label>
     <input class="field" id="s-link-url" placeholder="https://…">
     <div class="actions">
       <button class="btn danger" type="button" data-action="section.modal-delete" style="margin-right:auto" id="s-delete">Delete list</button>
       <button class="btn ghost" type="button" data-action="modal.close">Cancel</button>
-      <button class="btn primary" type="button" data-action="section.save">Save list</button>
+      <button class="btn primary" type="button" data-action="section.save">Save</button>
     </div>
   </div>
 </div>
 
-<!-- Paper step -->
 <div class="modal-bg" id="modal-pipe" role="dialog" aria-modal="true">
   <div class="modal">
     <h3>Paper step</h3>
-    <p class="help">One stage in your paper-writing path (e.g. Drafts, Final).</p>
-    <label for="p-code">Short code</label>
-    <input class="field" id="p-code" placeholder="e.g. 05">
+    <p class="help">One station on the way to a finished manuscript.</p>
+    <label for="p-code">Code</label>
+    <input class="field" id="p-code" placeholder="05">
     <label for="p-label">Name</label>
-    <input class="field" id="p-label" placeholder="e.g. Section drafts">
-    <label for="p-url">Folder link</label>
+    <input class="field" id="p-label" placeholder="Section drafts">
+    <label for="p-url">Folder</label>
     <input class="field" id="p-url" placeholder="https://drive.google.com/…">
     <div class="actions">
       <button class="btn danger" type="button" data-action="pipe.modal-delete" style="margin-right:auto" id="p-delete">Delete</button>
       <button class="btn ghost" type="button" data-action="modal.close">Cancel</button>
-      <button class="btn primary" type="button" data-action="pipe.save">Save step</button>
+      <button class="btn primary" type="button" data-action="pipe.save">Save</button>
     </div>
   </div>
 </div>
 
-<!-- Quick link -->
 <div class="modal-bg" id="modal-link" role="dialog" aria-modal="true">
   <div class="modal">
-    <h3>Quick link</h3>
-    <p class="help">Shortcuts across the top of the board.</p>
+    <h3>Shortcut</h3>
+    <p class="help">A chip across the top.</p>
     <label for="l-label">Name</label>
-    <input class="field" id="l-label" placeholder="e.g. Register">
-    <label for="l-url">Address</label>
-    <input class="field" id="l-url" placeholder="files/paper-register.html or https://…">
+    <input class="field" id="l-label" placeholder="Register">
+    <label for="l-url">Goes to</label>
+    <input class="field" id="l-url" placeholder="files/paper-register.html">
     <div class="actions">
       <button class="btn danger" type="button" data-action="link.modal-delete" style="margin-right:auto" id="l-delete">Delete</button>
       <button class="btn ghost" type="button" data-action="modal.close">Cancel</button>
-      <button class="btn primary" type="button" data-action="link.save">Save link</button>
+      <button class="btn primary" type="button" data-action="link.save">Save</button>
     </div>
   </div>
 </div>

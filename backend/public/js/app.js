@@ -343,32 +343,30 @@ function saveLinkModal() {
 async function syncNow(force) {
   if (syncing) return;
   syncing = true;
-  setStatus("Saving…", "warn");
+  setStatus("Saving", "warn");
   try {
     await api.saveBoard(state, { force: !!force });
     cacheLocal();
     setStatus("Saved", "ok");
   } catch (e) {
     if (e.conflict) {
-      const pull = confirm(
-        "This board was updated somewhere else. Load the latest version?"
-      );
+      const pull = confirm("Updated elsewhere. Load the newer board?");
       if (pull) {
         const body = await api.loadBoard();
         state = ensureCoreBlocks(normalizeBoard(body.data));
         paint();
         cacheLocal();
-        setStatus("Loaded latest", "ok");
+        setStatus("Updated", "ok");
       } else {
-        setStatus("Not saved — conflict", "warn");
+        setStatus("Not saved", "warn");
       }
     } else if (e.code === 401 || /unauthorized/i.test(e.message || "")) {
-      setStatus("Sign in to save", "warn");
+      setStatus("Sign in", "warn");
       $("session-banner")?.classList.add("show");
     } else {
-      setStatus("Save failed", "warn");
+      setStatus("Not saved", "warn");
       console.error(e);
-      alert("Could not save: " + e.message);
+      alert("Could not save.");
     }
   } finally {
     syncing = false;
@@ -376,11 +374,11 @@ async function syncNow(force) {
 }
 
 async function bootstrap() {
-  setStatus("Connecting…", "warn");
+  setStatus("…", "warn");
   try {
     const sess = await api.sessionStatus();
     if (!sess.authenticated) {
-      setStatus("Sign in to save", "warn");
+      setStatus("Sign in", "warn");
       $("session-banner")?.classList.add("show");
       const cached = loadLocalCache();
       if (cached) {
@@ -392,33 +390,92 @@ async function bootstrap() {
     $("session-banner")?.classList.remove("show");
     const body = await api.loadBoard();
     state = ensureCoreBlocks(normalizeBoard(body.data));
-    // Friendly default labels if still technical
+    let remapped = false;
     if (state.meta) {
-      if (/D1|HttpOnly|local persistence/i.test(state.meta.subtitle || "")) {
-        state.meta.subtitle = "Tasks · meetings · papers · EMERAULD";
-      }
-      if (/OPERATIONAL WORKBENCH|server-owned|Cloudflare/i.test(state.meta.footer || "")) {
-        state.meta.footer = "Changes save automatically when you are signed in.";
-      }
-      if (!state.meta.title || /Pharos · Workbench/i.test(state.meta.title)) {
+      if (
+        !state.meta.title ||
+        /Workbench|D1|HttpOnly|Cloudflare/i.test(state.meta.title)
+      ) {
         state.meta.title = "Pharos";
+        remapped = true;
+      }
+      if (
+        !state.meta.subtitle ||
+        /Tasks ·|local persistence|D1|OPERATIONAL/i.test(state.meta.subtitle)
+      ) {
+        state.meta.subtitle = "What needs you";
+        remapped = true;
+      }
+      if (
+        !state.meta.footer ||
+        /OPERATIONAL|server-owned|Cloudflare|Changes save automatically/i.test(
+          state.meta.footer
+        )
+      ) {
+        state.meta.footer = "Saves when you’re signed in.";
+        remapped = true;
       }
     }
     const pipe = pipelineBlock(state);
-    if (pipe && /Paper Series OS|Pharos Paper/i.test(pipe.title || "")) {
-      pipe.title = "Paper writing steps";
+    if (pipe && /Paper Series|Paper writing|Pharos Paper/i.test(pipe.title || "")) {
+      pipe.title = "Paper path";
+      remapped = true;
+    }
+    // Quiet list titles (migrate old wording only)
+    for (const b of listBlocks(state)) {
+      const map = {
+        "Needs attention": "Needs you",
+        "Mail to handle": "Mail",
+        "EMERAULD vault": "EMERAULD",
+        "Paper writing steps": "Paper path",
+      };
+      if (map[b.title]) {
+        b.title = map[b.title];
+        remapped = true;
+      }
+      if (b.id === "sec_cal" && /No meetings or deadlines|No plans/i.test(b.empty || "")) {
+        b.empty = "Clear.";
+        remapped = true;
+      }
+      if (b.id === "sec_granola" && /No meeting notes/i.test(b.empty || "")) {
+        b.empty = "None yet.";
+        remapped = true;
+      }
+      if (b.id === "sec_actions" && /Nothing urgent/i.test(b.empty || "")) {
+        b.empty = "Clear.";
+        remapped = true;
+      }
+      if (b.id === "sec_mail" && /Inbox clear/i.test(b.empty || "")) {
+        b.empty = "Clear.";
+        remapped = true;
+      }
+      if (b.linkLabel && /Open Granola/i.test(b.linkLabel)) {
+        b.linkLabel = "Granola";
+        remapped = true;
+      }
+      if (b.linkLabel && /Open on GitHub/i.test(b.linkLabel)) {
+        b.linkLabel = "GitHub";
+        remapped = true;
+      }
+    }
+    const links = linksBlock(state);
+    for (const l of links.items || []) {
+      if (l.label === "Papers hub" || l.label === "Method hub") {
+        l.label = "Papers";
+        remapped = true;
+      }
     }
     paint();
     cacheLocal();
-    setStatus(body.exists ? "Saved in cloud" : "Ready", "ok");
+    setStatus(body.exists ? "Saved" : "Ready", "ok");
     if (body.exists && body.data && body.data.version !== 3) {
       await syncNow(true);
-    } else if (!body.exists) {
+    } else if (!body.exists || remapped) {
       await syncNow(true);
     }
   } catch (e) {
     console.warn(e);
-    setStatus("Offline — local only", "warn");
+    setStatus("Offline", "warn");
     const cached = loadLocalCache();
     if (cached) {
       state = cached;
@@ -525,20 +582,20 @@ const actions = {
       state = ensureCoreBlocks(normalizeBoard(body.data));
       paint();
       cacheLocal();
-      setStatus("Fresh board", "ok");
+      setStatus("Clean", "ok");
     } catch (e) {
-      alert("Could not reset: " + e.message);
+      alert("Could not reset.");
     }
   },
   "session.login": async () => {
     const key = $("session-key")?.value?.trim();
-    if (!key) return alert("Paste your access key first.");
+    if (!key) return alert("Enter your key.");
     try {
       await api.login(key);
       $("session-banner")?.classList.remove("show");
       await bootstrap();
     } catch (e) {
-      alert("Sign-in failed. Check the key and try again.");
+      alert("That key didn’t work.");
     }
   },
   "modal.close": () => closeModals(),
