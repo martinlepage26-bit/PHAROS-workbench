@@ -330,7 +330,8 @@ select.field{cursor:pointer}
       { id: uid(), label: 'Register', url: 'files/paper-register.html' },
       { id: uid(), label: 'Corpus', url: 'files/corpus-full-list.html' },
       { id: uid(), label: 'Atlas', url: 'files/method-formation-atlas.html' },
-      { id: uid(), label: 'Timeline', url: 'files/method-formation-timeline.html' }
+      { id: uid(), label: 'Timeline', url: 'files/method-formation-timeline.html' },
+      { id: uid(), label: 'EMERAULD', url: 'https://github.com/martinlepage26-bit/EMERAULD' }
     ],
     pipeline: [
       { id: uid(), code: '00', label: 'Project Control', url: 'https://drive.google.com/drive/folders/1akv_LPk20UwaxJsIqoSx6G2DzKbWzfWR' },
@@ -436,24 +437,20 @@ select.field{cursor:pointer}
         ]
       },
       {
-        id: 'sec_notion',
-        title: 'Notion',
-        layout: 'half',
+        id: 'sec_emerauld',
+        title: 'EMERAULD · Git vault',
+        layout: 'full',
         style: 'normal',
-        empty: 'No recently-viewed pages returned in this window.',
-        linkLabel: '',
-        linkUrl: '',
-        items: []
-      },
-      {
-        id: 'sec_slack',
-        title: 'Slack',
-        layout: 'half',
-        style: 'normal',
-        empty: 'No mentions of you in the search window.',
-        linkLabel: '',
-        linkUrl: '',
-        items: []
+        empty: 'No EMERAULD pointers yet.',
+        linkLabel: '↗ github.com/martinlepage26-bit/EMERAULD',
+        linkUrl: 'https://github.com/martinlepage26-bit/EMERAULD',
+        items: [
+          { id: uid(), time: 'repo', source: 'GitHub', text: 'EMERAULD vault (public)', tag: 'git', tagKind: 'c-ok', kind: 'LINK', url: 'https://github.com/martinlepage26-bit/EMERAULD' },
+          { id: uid(), time: 'origin', source: 'Forgejo', text: 'git.infrafabric.io/martin/EMERAULD', tag: 'canonical origin', tagKind: '', kind: 'LINK', url: 'https://git.infrafabric.io/martin/EMERAULD' },
+          { id: uid(), time: 'local', source: 'checkout', text: '~/work/EMERAULD', tag: 'workspace', tagKind: '', kind: '', url: '' },
+          { id: uid(), time: 'map', source: 'index', text: 'Vault index & PARA surfaces', tag: 'nav', tagKind: '', kind: 'MD', url: 'https://github.com/martinlepage26-bit/EMERAULD/blob/main/index.md' },
+          { id: uid(), time: 'os', source: 'architecture', text: 'EMERAULD OS architecture', tag: 'docs', tagKind: '', kind: 'MD', url: 'https://github.com/martinlepage26-bit/EMERAULD/blob/main/EMERAULD_OS_ARCHITECTURE.md' }
+        ]
       }
     ]
   };
