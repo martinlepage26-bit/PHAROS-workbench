@@ -100,7 +100,7 @@ export function createApi({ onStatus } = {}) {
     }
     const body = await res.json();
     revision = body.revision || revision;
-    setStatus("backend: synced · r" + revision, true);
+    setStatus("Saved", true);
     return body;
   }
 

@@ -18,23 +18,18 @@ import { renderBoard } from "./render.js";
 const CACHE_KEY = "pharos-workbench-v3-cache";
 const $ = (id) => document.getElementById(id);
 
-function setBackendStatus(text, ok) {
-  const el = $("backend-status");
+function setStatus(text, kind) {
+  const el = $("status-pill");
   if (!el) return;
   el.textContent = text;
-  el.classList.toggle("ok", !!ok);
+  el.classList.remove("ok", "warn");
+  if (kind === "ok") el.classList.add("ok");
+  if (kind === "warn") el.classList.add("warn");
 }
 
-function setSaveStatus(text) {
-  const el = $("save-status");
-  if (!el) return;
-  el.textContent = text;
-  el.classList.add("ok");
-  clearTimeout(setSaveStatus._t);
-  setSaveStatus._t = setTimeout(() => el.classList.remove("ok"), 1600);
-}
-
-const api = createApi({ onStatus: setBackendStatus });
+const api = createApi({
+  onStatus: (text, ok) => setStatus(text, ok ? "ok" : "warn"),
+});
 
 let state = emptyBoard();
 let saveTimer = null;
@@ -61,14 +56,13 @@ function loadLocalCache() {
 }
 
 function scheduleSave() {
-  setSaveStatus("saving…");
+  setStatus("Saving…", "warn");
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     cacheLocal();
-    setSaveStatus("local · " + new Date().toLocaleTimeString());
     clearTimeout(remoteTimer);
-    remoteTimer = setTimeout(() => syncNow(false), 500);
-  }, 200);
+    remoteTimer = setTimeout(() => syncNow(false), 450);
+  }, 180);
 }
 
 function closeModals() {
@@ -130,10 +124,10 @@ function openItemModal(sectionId, itemId) {
   if (itemId) {
     const hit = findListItem(state, editCtx.sectionId, itemId);
     if (hit) item = hit.item;
-    $("modal-item-title").textContent = "Edit item";
+    $("modal-item-title").textContent = "Edit task";
     $("m-delete").style.display = "";
   } else {
-    $("modal-item-title").textContent = "Add item";
+    $("modal-item-title").textContent = "New task";
     $("m-delete").style.display = "none";
   }
   $("m-time").value = item.time || "";
@@ -308,37 +302,32 @@ function saveLinkModal() {
 async function syncNow(force) {
   if (syncing) return;
   syncing = true;
-  setBackendStatus("backend: syncing…", false);
+  setStatus("Saving…", "warn");
   try {
     await api.saveBoard(state, { force: !!force });
     cacheLocal();
-    setSaveStatus("cloud · r" + api.revision);
+    setStatus("Saved", "ok");
   } catch (e) {
     if (e.conflict) {
       const pull = confirm(
-        "Board changed on server (r" +
-          e.conflict.current_revision +
-          "). Pull server version?"
+        "This board was updated somewhere else. Load the latest version?"
       );
       if (pull) {
         const body = await api.loadBoard();
         state = ensureCoreBlocks(normalizeBoard(body.data));
         paint();
         cacheLocal();
-        setBackendStatus("backend: pulled · r" + api.revision, true);
+        setStatus("Loaded latest", "ok");
       } else {
-        setBackendStatus(
-          "backend: conflict · r" + e.conflict.current_revision,
-          false
-        );
+        setStatus("Not saved — conflict", "warn");
       }
     } else if (e.code === 401 || /unauthorized/i.test(e.message || "")) {
-      setBackendStatus("backend: session required", false);
+      setStatus("Sign in to save", "warn");
       $("session-banner")?.classList.add("show");
     } else {
-      setBackendStatus("backend: error", false);
+      setStatus("Save failed", "warn");
       console.error(e);
-      alert("Sync failed: " + e.message);
+      alert("Could not save: " + e.message);
     }
   } finally {
     syncing = false;
@@ -346,11 +335,11 @@ async function syncNow(force) {
 }
 
 async function bootstrap() {
-  setBackendStatus("backend: connecting…", false);
+  setStatus("Connecting…", "warn");
   try {
     const sess = await api.sessionStatus();
     if (!sess.authenticated) {
-      setBackendStatus("backend: session required", false);
+      setStatus("Sign in to save", "warn");
       $("session-banner")?.classList.add("show");
       const cached = loadLocalCache();
       if (cached) {
@@ -362,15 +351,25 @@ async function bootstrap() {
     $("session-banner")?.classList.remove("show");
     const body = await api.loadBoard();
     state = ensureCoreBlocks(normalizeBoard(body.data));
+    // Friendly default labels if still technical
+    if (state.meta) {
+      if (/D1|HttpOnly|local persistence/i.test(state.meta.subtitle || "")) {
+        state.meta.subtitle = "Tasks · meetings · papers · EMERAULD";
+      }
+      if (/OPERATIONAL WORKBENCH|server-owned|Cloudflare/i.test(state.meta.footer || "")) {
+        state.meta.footer = "Changes save automatically when you are signed in.";
+      }
+      if (!state.meta.title || /Pharos · Workbench/i.test(state.meta.title)) {
+        state.meta.title = "Pharos";
+      }
+    }
+    const pipe = pipelineBlock(state);
+    if (pipe && /Paper Series OS|Pharos Paper/i.test(pipe.title || "")) {
+      pipe.title = "Paper writing steps";
+    }
     paint();
     cacheLocal();
-    setBackendStatus(
-      body.exists
-        ? "backend: online · r" + api.revision
-        : "backend: default · r0 (save to create)",
-      true
-    );
-    // Migrate legacy boards to v3 on first load after auth
+    setStatus(body.exists ? "Saved in cloud" : "Ready", "ok");
     if (body.exists && body.data && body.data.version !== 3) {
       await syncNow(true);
     } else if (!body.exists) {
@@ -378,7 +377,7 @@ async function bootstrap() {
     }
   } catch (e) {
     console.warn(e);
-    setBackendStatus("backend: offline · local cache", false);
+    setStatus("Offline — local only", "warn");
     const cached = loadLocalCache();
     if (cached) {
       state = cached;
@@ -390,11 +389,20 @@ async function bootstrap() {
 /* ── actions ────────────────────────────────────────────── */
 
 const actions = {
+  "menu.toggle": (el) => {
+    const panel = $("more-panel");
+    if (!panel) return;
+    const open = panel.classList.toggle("open");
+    el.setAttribute("aria-expanded", open ? "true" : "false");
+  },
+  "toggle-advanced": () => {
+    $("item-advanced")?.classList.toggle("show");
+  },
   "item.add": (el) =>
     openItemModal(el.dataset.section || listBlocks(state)[0]?.id, null),
   "item.edit": (el) => openItemModal(el.dataset.section, el.dataset.id),
   "item.delete": (el) => {
-    if (!confirm("Delete item?")) return;
+    if (!confirm("Remove this task?")) return;
     const block = findBlock(state, el.dataset.section);
     if (!block || block.type !== "list") return;
     block.items = block.items.filter((i) => i.id !== el.dataset.id);
@@ -470,33 +478,33 @@ const actions = {
   },
   import: () => $("import-file")?.click(),
   reset: async () => {
-    if (!confirm("Reset board to server default?")) return;
+    if (!confirm("Clear this board and start with a simple fresh layout?")) return;
     try {
       const body = await api.resetBoard();
       state = ensureCoreBlocks(normalizeBoard(body.data));
       paint();
       cacheLocal();
-      setBackendStatus("backend: reset · r" + api.revision, true);
+      setStatus("Fresh board", "ok");
     } catch (e) {
-      alert("Reset failed: " + e.message);
+      alert("Could not reset: " + e.message);
     }
   },
   "session.login": async () => {
     const key = $("session-key")?.value?.trim();
-    if (!key) return alert("Paste API key");
+    if (!key) return alert("Paste your access key first.");
     try {
       await api.login(key);
       $("session-banner")?.classList.remove("show");
       await bootstrap();
     } catch (e) {
-      alert(e.message);
+      alert("Sign-in failed. Check the key and try again.");
     }
   },
   "modal.close": () => closeModals(),
   "item.save": () => saveItemModal(),
   "item.modal-delete": () => {
     if (!editCtx?.itemId) return;
-    if (!confirm("Delete this item?")) return;
+    if (!confirm("Remove this task?")) return;
     const block = findBlock(state, editCtx.sectionId);
     if (block && block.type === "list") {
       block.items = block.items.filter((i) => i.id !== editCtx.itemId);
@@ -508,7 +516,7 @@ const actions = {
   "section.save": () => saveSectionModal(),
   "section.modal-delete": () => {
     if (!editCtx || editCtx.id === "new") return;
-    if (!confirm("Delete this entire section?")) return;
+    if (!confirm("Delete this whole list and its tasks?")) return;
     state.blocks = state.blocks.filter((b) => b.id !== editCtx.id);
     closeModals();
     paint();
@@ -537,6 +545,10 @@ const actions = {
 };
 
 document.addEventListener("click", (e) => {
+  // close more menu when clicking outside
+  if (!e.target.closest(".more-menu")) {
+    $("more-panel")?.classList.remove("open");
+  }
   const t = e.target.closest("[data-action]");
   if (!t) {
     if (e.target.classList?.contains("modal-bg")) closeModals();
