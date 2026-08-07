@@ -1,4 +1,7 @@
-/** Board model: normalize + mutate helpers. */
+/**
+ * Board model v3 — blocks only.
+ * Legacy { links, pipeline, sections } is upgraded on load.
+ */
 
 export function uid(prefix = "id") {
   return (
@@ -11,7 +14,7 @@ export function uid(prefix = "id") {
 
 export function emptyBoard() {
   return {
-    version: 2,
+    version: 3,
     meta: {
       title: "Pharos · Workbench",
       subtitle: "Loading…",
@@ -20,54 +23,175 @@ export function emptyBoard() {
       snap: "",
       footer: "",
     },
-    links: [],
-    pipeline: [],
-    sections: [],
+    blocks: [
+      { type: "links", id: "nav", items: [] },
+      {
+        type: "pipeline",
+        id: "pipeline",
+        title: "Drive — Pharos Paper Series OS pipeline",
+        stages: [],
+      },
+    ],
   };
 }
 
-/** Drop Notion/Slack leftovers; ensure arrays exist. */
+function isNoise(title, id = "") {
+  const t = `${title || ""} ${id || ""}`.toLowerCase();
+  return t.includes("notion") || t.includes("slack");
+}
+
+/** Upgrade any stored/imported payload to v3 blocks. */
 export function normalizeBoard(raw) {
-  const data = raw && typeof raw === "object" ? structuredClone(raw) : emptyBoard();
-  data.version = data.version || 2;
-  data.meta = data.meta || emptyBoard().meta;
-  data.links = Array.isArray(data.links) ? data.links : [];
-  data.pipeline = Array.isArray(data.pipeline) ? data.pipeline : [];
-  data.sections = Array.isArray(data.sections) ? data.sections : [];
+  if (!raw || typeof raw !== "object") return emptyBoard();
+  const data = structuredClone(raw);
+  const meta = Object.assign(emptyBoard().meta, data.meta || {});
 
-  data.sections = data.sections.filter((s) => {
-    const t = (s.title || "").toLowerCase();
-    const id = (s.id || "").toLowerCase();
-    return (
-      !t.includes("notion") &&
-      !t.includes("slack") &&
-      !id.includes("notion") &&
-      !id.includes("slack")
-    );
-  });
-  data.links = data.links.filter((l) => {
-    const lab = (l.label || "").toLowerCase();
-    return !lab.includes("notion") && !lab.includes("slack");
-  });
-
-  for (const s of data.sections) {
-    s.items = Array.isArray(s.items) ? s.items : [];
-    s.layout = s.layout === "full" ? "full" : "half";
-    s.style = s.style === "alert" ? "alert" : "normal";
+  if (Array.isArray(data.blocks) && data.blocks.length) {
+    const blocks = data.blocks
+      .map(normalizeBlock)
+      .filter(Boolean);
+    return { version: 3, meta, blocks };
   }
-  return data;
+
+  // Legacy v1/v2
+  const blocks = [];
+  blocks.push({
+    type: "links",
+    id: "nav",
+    items: (data.links || [])
+      .filter((l) => !isNoise(l.label, l.id))
+      .map((l) => ({
+        id: l.id || uid("link"),
+        label: l.label || "",
+        url: l.url || "",
+      })),
+  });
+  blocks.push({
+    type: "pipeline",
+    id: "pipeline",
+    title: "Drive — Pharos Paper Series OS pipeline",
+    stages: (data.pipeline || []).map((s) => ({
+      id: s.id || uid("pipe"),
+      code: s.code || "",
+      label: s.label || "",
+      url: s.url || "",
+    })),
+  });
+  for (const s of data.sections || []) {
+    if (isNoise(s.title, s.id)) continue;
+    blocks.push({
+      type: "list",
+      id: s.id || uid("sec"),
+      title: s.title || "Untitled",
+      layout: s.layout === "full" ? "full" : "half",
+      style: s.style === "alert" ? "alert" : "normal",
+      empty: s.empty || "Empty",
+      linkLabel: s.linkLabel || "",
+      linkUrl: s.linkUrl || "",
+      items: (s.items || []).map((it) => ({
+        id: it.id || uid("item"),
+        time: it.time || "",
+        source: it.source || "",
+        text: it.text || "",
+        tag: it.tag || "",
+        tagKind: it.tagKind || "",
+        kind: it.kind || "",
+        url: it.url || "",
+      })),
+    });
+  }
+  return { version: 3, meta, blocks };
 }
 
-export function findSection(state, id) {
-  return (state.sections || []).find((s) => s.id === id) || null;
+function normalizeBlock(b) {
+  if (!b || !b.type) return null;
+  if (b.type === "links") {
+    return {
+      type: "links",
+      id: b.id || "nav",
+      items: (b.items || [])
+        .filter((l) => !isNoise(l.label, l.id))
+        .map((l) => ({
+          id: l.id || uid("link"),
+          label: l.label || "",
+          url: l.url || "",
+        })),
+    };
+  }
+  if (b.type === "pipeline") {
+    return {
+      type: "pipeline",
+      id: b.id || "pipeline",
+      title: b.title || "Pipeline",
+      stages: (b.stages || []).map((s) => ({
+        id: s.id || uid("pipe"),
+        code: s.code || "",
+        label: s.label || "",
+        url: s.url || "",
+      })),
+    };
+  }
+  if (b.type === "list") {
+    if (isNoise(b.title, b.id)) return null;
+    return {
+      type: "list",
+      id: b.id || uid("sec"),
+      title: b.title || "Untitled",
+      layout: b.layout === "full" ? "full" : "half",
+      style: b.style === "alert" ? "alert" : "normal",
+      empty: b.empty || "Empty",
+      linkLabel: b.linkLabel || "",
+      linkUrl: b.linkUrl || "",
+      items: (b.items || []).map((it) => ({
+        id: it.id || uid("item"),
+        time: it.time || "",
+        source: it.source || "",
+        text: it.text || "",
+        tag: it.tag || "",
+        tagKind: it.tagKind || "",
+        kind: it.kind || "",
+        url: it.url || "",
+      })),
+    };
+  }
+  return null;
 }
 
-export function findItem(state, sectionId, itemId) {
-  const sec = findSection(state, sectionId);
-  if (!sec) return null;
-  const index = (sec.items || []).findIndex((i) => i.id === itemId);
+export function linksBlock(state) {
+  return (
+    (state.blocks || []).find((b) => b.type === "links") || {
+      type: "links",
+      id: "nav",
+      items: [],
+    }
+  );
+}
+
+export function pipelineBlock(state) {
+  return (
+    (state.blocks || []).find((b) => b.type === "pipeline") || {
+      type: "pipeline",
+      id: "pipeline",
+      title: "Pipeline",
+      stages: [],
+    }
+  );
+}
+
+export function listBlocks(state) {
+  return (state.blocks || []).filter((b) => b.type === "list");
+}
+
+export function findBlock(state, id) {
+  return (state.blocks || []).find((b) => b.id === id) || null;
+}
+
+export function findListItem(state, sectionId, itemId) {
+  const block = findBlock(state, sectionId);
+  if (!block || block.type !== "list") return null;
+  const index = block.items.findIndex((i) => i.id === itemId);
   if (index < 0) return null;
-  return { section: sec, item: sec.items[index], index };
+  return { block, item: block.items[index], index };
 }
 
 export function moveInArray(arr, index, dir) {
@@ -89,4 +213,20 @@ export function kindClass(k) {
       LINK: "k-link",
     }[k] || ""
   );
+}
+
+export function ensureCoreBlocks(state) {
+  if (!state.blocks) state.blocks = [];
+  if (!state.blocks.some((b) => b.type === "links")) {
+    state.blocks.unshift({ type: "links", id: "nav", items: [] });
+  }
+  if (!state.blocks.some((b) => b.type === "pipeline")) {
+    state.blocks.splice(1, 0, {
+      type: "pipeline",
+      id: "pipeline",
+      title: "Drive — Pharos Paper Series OS pipeline",
+      stages: [],
+    });
+  }
+  return state;
 }

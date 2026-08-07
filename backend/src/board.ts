@@ -1,6 +1,7 @@
-/** D1 board read/write with revision lock and event prune. */
+/** D1 board read/write with revision lock, schema upgrade, event prune. */
 
-import { buildDefaultBoard, type BoardData } from "./default-board";
+import { buildDefaultBoard } from "./default-board";
+import { toBoardV3, type BoardV3 } from "./schema";
 
 export type BoardRow = {
   id: string;
@@ -38,27 +39,13 @@ export async function getBoard(
     .first<BoardRow>();
 }
 
-export function parseBoardData(row: BoardRow | null): BoardData | null {
+export function parseBoardData(row: BoardRow | null): BoardV3 | null {
   if (!row) return null;
   try {
-    return JSON.parse(row.data) as BoardData;
+    return toBoardV3(JSON.parse(row.data));
   } catch {
     return null;
   }
-}
-
-/** Strip Notion/Slack leftovers if any older boards still carry them. */
-export function sanitizeBoard(data: BoardData): BoardData {
-  const sections = (data.sections || []).filter((s) => {
-    const t = (s.title || "").toLowerCase();
-    const id = (s.id || "").toLowerCase();
-    return !t.includes("notion") && !t.includes("slack") && !id.includes("notion") && !id.includes("slack");
-  });
-  const links = (data.links || []).filter((l) => {
-    const lab = (l.label || "").toLowerCase();
-    return !lab.includes("notion") && !lab.includes("slack");
-  });
-  return { ...data, sections, links };
 }
 
 export async function writeBoard(
@@ -70,7 +57,9 @@ export async function writeBoard(
     client: string;
   }
 ): Promise<WriteResult> {
-  const payload = JSON.stringify(data);
+  // Always persist canonical v3
+  const board = toBoardV3(data);
+  const payload = JSON.stringify(board);
   if (payload.length > 4_500_000) {
     throw new Error("payload_too_large");
   }
@@ -166,7 +155,6 @@ export async function listHistory(
 }
 
 async function pruneEvents(db: D1Database, boardId: string): Promise<void> {
-  // Keep newest MAX_EVENTS rows per board
   await db
     .prepare(
       `DELETE FROM board_events WHERE board_id = ? AND id NOT IN (
@@ -177,6 +165,6 @@ async function pruneEvents(db: D1Database, boardId: string): Promise<void> {
     .run();
 }
 
-export function defaultBoardData(): BoardData {
+export function defaultBoardData(): BoardV3 {
   return buildDefaultBoard();
 }

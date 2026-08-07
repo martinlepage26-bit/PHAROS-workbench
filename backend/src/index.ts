@@ -20,9 +20,9 @@ import {
   getBoard,
   listHistory,
   parseBoardData,
-  sanitizeBoard,
   writeBoard,
 } from "./board";
+import { toBoardV3 } from "./schema";
 
 export interface Env extends AuthEnv {
   DB: D1Database;
@@ -183,7 +183,7 @@ export default {
             { ETag: 'W/"0"', "X-Board-Revision": "0" }
           );
         }
-        const data = sanitizeBoard(parseBoardData(row) || defaultBoardData());
+        const data = parseBoardData(row) || defaultBoardData();
         return json(
           env,
           request,
@@ -218,12 +218,7 @@ export default {
           "web";
         const expected = parseExpectedRevision(request, body);
 
-        let data = body.data as ReturnType<typeof defaultBoardData>;
-        try {
-          data = sanitizeBoard(data);
-        } catch {
-          /* keep raw */
-        }
+        const data = toBoardV3(body.data);
 
         try {
           const result = await writeBoard(env.DB, boardId, data, {

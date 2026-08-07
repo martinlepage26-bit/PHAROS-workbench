@@ -7,7 +7,8 @@
     "deploy": "wrangler deploy",
     "db:local": "wrangler d1 migrations apply pharos-workbench --local",
     "db:remote": "wrangler d1 migrations apply pharos-workbench --remote",
-    "tail": "wrangler tail"
+    "tail": "wrangler tail",
+    "test": "node --experimental-strip-types --test src/**/*.test.ts"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250807.0",

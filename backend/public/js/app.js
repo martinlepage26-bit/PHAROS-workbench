@@ -1,18 +1,21 @@
-/** Workbench app: action dispatcher, modals, sync. */
+/** Workbench app: data-action dispatcher over v3 blocks. */
 
 import { createApi } from "./api.js";
 import {
   emptyBoard,
-  findItem,
-  findSection,
+  ensureCoreBlocks,
+  findBlock,
+  findListItem,
+  linksBlock,
+  listBlocks,
   moveInArray,
   normalizeBoard,
+  pipelineBlock,
   uid,
 } from "./model.js";
 import { renderBoard } from "./render.js";
 
-const CACHE_KEY = "pharos-workbench-v2-cache";
-
+const CACHE_KEY = "pharos-workbench-v3-cache";
 const $ = (id) => document.getElementById(id);
 
 function setBackendStatus(text, ok) {
@@ -37,13 +40,13 @@ let state = emptyBoard();
 let saveTimer = null;
 let remoteTimer = null;
 let syncing = false;
-let editCtx = null; // { kind, ... }
+let editCtx = null;
 
 function cacheLocal() {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(state));
   } catch (_) {
-    /* quota */
+    /* ignore */
   }
 }
 
@@ -51,7 +54,7 @@ function loadLocalCache() {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
-    return normalizeBoard(JSON.parse(raw));
+    return ensureCoreBlocks(normalizeBoard(JSON.parse(raw)));
   } catch {
     return null;
   }
@@ -81,7 +84,7 @@ function openModal(id) {
 function fillSelectSections(selected) {
   const sel = $("m-section");
   if (!sel) return;
-  sel.innerHTML = (state.sections || [])
+  sel.innerHTML = listBlocks(state)
     .map(
       (s) =>
         `<option value="${s.id}" ${s.id === selected ? "selected" : ""}>${escapeAttr(s.title)}</option>`
@@ -97,14 +100,24 @@ function escapeAttr(s) {
 }
 
 function paint() {
+  ensureCoreBlocks(state);
   renderBoard(state, scheduleSave);
 }
 
-/* ── item modal ─────────────────────────────────────────── */
+/* ── item ───────────────────────────────────────────────── */
 
 function openItemModal(sectionId, itemId) {
-  editCtx = { kind: "item", sectionId, itemId: itemId || null };
-  fillSelectSections(sectionId || state.sections[0]?.id);
+  const lists = listBlocks(state);
+  editCtx = {
+    kind: "item",
+    sectionId: sectionId || lists[0]?.id,
+    itemId: itemId || null,
+  };
+  if (!editCtx.sectionId) {
+    alert("Add a section first.");
+    return;
+  }
+  fillSelectSections(editCtx.sectionId);
   let item = {
     time: "",
     source: "",
@@ -115,7 +128,7 @@ function openItemModal(sectionId, itemId) {
     url: "",
   };
   if (itemId) {
-    const hit = findItem(state, sectionId, itemId);
+    const hit = findListItem(state, editCtx.sectionId, itemId);
     if (hit) item = hit.item;
     $("modal-item-title").textContent = "Edit item";
     $("m-delete").style.display = "";
@@ -137,8 +150,8 @@ function openItemModal(sectionId, itemId) {
 function saveItemModal() {
   if (!editCtx || editCtx.kind !== "item") return;
   const sectionId = $("m-section").value;
-  const sec = findSection(state, sectionId);
-  if (!sec) return;
+  let block = findBlock(state, sectionId);
+  if (!block || block.type !== "list") return;
   const payload = {
     id: editCtx.itemId || uid("item"),
     time: $("m-time").value.trim(),
@@ -150,27 +163,24 @@ function saveItemModal() {
     url: $("m-url").value.trim(),
   };
   if (editCtx.itemId && editCtx.sectionId !== sectionId) {
-    const old = findSection(state, editCtx.sectionId);
-    if (old) old.items = (old.items || []).filter((i) => i.id !== editCtx.itemId);
-    sec.items = sec.items || [];
-    sec.items.unshift(payload);
-  } else if (editCtx.itemId) {
-    const idx = (sec.items || []).findIndex((i) => i.id === editCtx.itemId);
-    if (idx >= 0) sec.items[idx] = payload;
-    else {
-      sec.items = sec.items || [];
-      sec.items.unshift(payload);
+    const old = findBlock(state, editCtx.sectionId);
+    if (old && old.type === "list") {
+      old.items = old.items.filter((i) => i.id !== editCtx.itemId);
     }
+    block.items.unshift(payload);
+  } else if (editCtx.itemId) {
+    const idx = block.items.findIndex((i) => i.id === editCtx.itemId);
+    if (idx >= 0) block.items[idx] = payload;
+    else block.items.unshift(payload);
   } else {
-    sec.items = sec.items || [];
-    sec.items.unshift(payload);
+    block.items.unshift(payload);
   }
   closeModals();
   paint();
   scheduleSave();
 }
 
-/* ── section modal ──────────────────────────────────────── */
+/* ── section (list block) ───────────────────────────────── */
 
 function openSectionModal(id) {
   editCtx = { kind: "section", id: id || "new" };
@@ -186,8 +196,8 @@ function openSectionModal(id) {
         linkLabel: "",
         linkUrl: "",
       }
-    : findSection(state, id);
-  if (!sec) return;
+    : findBlock(state, id);
+  if (!sec || (!isNew && sec.type !== "list")) return;
   $("s-title").value = sec.title || "";
   $("s-layout").value = sec.layout || "half";
   $("s-style").value = sec.style || "normal";
@@ -200,7 +210,7 @@ function openSectionModal(id) {
 
 function saveSectionModal() {
   if (!editCtx || editCtx.kind !== "section") return;
-  const payload = {
+  const fields = {
     title: $("s-title").value.trim() || "Untitled",
     layout: $("s-layout").value,
     style: $("s-style").value,
@@ -209,26 +219,32 @@ function saveSectionModal() {
     linkUrl: $("s-link-url").value.trim(),
   };
   if (editCtx.id === "new") {
-    state.sections.push({ id: uid("sec"), items: [], ...payload });
+    state.blocks.push({
+      type: "list",
+      id: uid("sec"),
+      items: [],
+      ...fields,
+    });
   } else {
-    const sec = findSection(state, editCtx.id);
-    if (!sec) return;
-    Object.assign(sec, payload);
+    const sec = findBlock(state, editCtx.id);
+    if (!sec || sec.type !== "list") return;
+    Object.assign(sec, fields);
   }
   closeModals();
   paint();
   scheduleSave();
 }
 
-/* ── pipeline / link modals ─────────────────────────────── */
+/* ── pipeline / links ───────────────────────────────────── */
 
 function openPipeModal(id) {
   editCtx = { kind: "pipe", id: id || "new" };
   const isNew = editCtx.id === "new";
   $("p-delete").style.display = isNew ? "none" : "";
+  const pipe = pipelineBlock(state);
   const p = isNew
     ? { code: "", label: "", url: "" }
-    : (state.pipeline || []).find((x) => x.id === id);
+    : pipe.stages.find((x) => x.id === id);
   if (!p) return;
   $("p-code").value = p.code || "";
   $("p-label").value = p.label || "";
@@ -238,17 +254,17 @@ function openPipeModal(id) {
 
 function savePipeModal() {
   if (!editCtx || editCtx.kind !== "pipe") return;
+  const pipe = pipelineBlock(state);
   const payload = {
     id: editCtx.id === "new" ? uid("pipe") : editCtx.id,
     code: $("p-code").value.trim(),
     label: $("p-label").value.trim(),
     url: $("p-url").value.trim(),
   };
-  state.pipeline = state.pipeline || [];
-  if (editCtx.id === "new") state.pipeline.push(payload);
+  if (editCtx.id === "new") pipe.stages.push(payload);
   else {
-    const i = state.pipeline.findIndex((x) => x.id === editCtx.id);
-    if (i >= 0) state.pipeline[i] = payload;
+    const i = pipe.stages.findIndex((x) => x.id === editCtx.id);
+    if (i >= 0) pipe.stages[i] = payload;
   }
   closeModals();
   paint();
@@ -259,9 +275,10 @@ function openLinkModal(id) {
   editCtx = { kind: "link", id: id || "new" };
   const isNew = editCtx.id === "new";
   $("l-delete").style.display = isNew ? "none" : "";
+  const links = linksBlock(state);
   const l = isNew
     ? { label: "", url: "" }
-    : (state.links || []).find((x) => x.id === id);
+    : links.items.find((x) => x.id === id);
   if (!l) return;
   $("l-label").value = l.label || "";
   $("l-url").value = l.url || "";
@@ -270,16 +287,16 @@ function openLinkModal(id) {
 
 function saveLinkModal() {
   if (!editCtx || editCtx.kind !== "link") return;
+  const links = linksBlock(state);
   const payload = {
     id: editCtx.id === "new" ? uid("link") : editCtx.id,
     label: $("l-label").value.trim() || "link",
     url: $("l-url").value.trim() || "#",
   };
-  state.links = state.links || [];
-  if (editCtx.id === "new") state.links.push(payload);
+  if (editCtx.id === "new") links.items.push(payload);
   else {
-    const i = state.links.findIndex((x) => x.id === editCtx.id);
-    if (i >= 0) state.links[i] = payload;
+    const i = links.items.findIndex((x) => x.id === editCtx.id);
+    if (i >= 0) links.items[i] = payload;
   }
   closeModals();
   paint();
@@ -305,7 +322,7 @@ async function syncNow(force) {
       );
       if (pull) {
         const body = await api.loadBoard();
-        state = normalizeBoard(body.data);
+        state = ensureCoreBlocks(normalizeBoard(body.data));
         paint();
         cacheLocal();
         setBackendStatus("backend: pulled · r" + api.revision, true);
@@ -344,7 +361,7 @@ async function bootstrap() {
     }
     $("session-banner")?.classList.remove("show");
     const body = await api.loadBoard();
-    state = normalizeBoard(body.data);
+    state = ensureCoreBlocks(normalizeBoard(body.data));
     paint();
     cacheLocal();
     setBackendStatus(
@@ -353,8 +370,10 @@ async function bootstrap() {
         : "backend: default · r0 (save to create)",
       true
     );
-    if (!body.exists) {
-      // Persist server default into D1 on first authenticated visit
+    // Migrate legacy boards to v3 on first load after auth
+    if (body.exists && body.data && body.data.version !== 3) {
+      await syncNow(true);
+    } else if (!body.exists) {
       await syncNow(true);
     }
   } catch (e) {
@@ -368,24 +387,25 @@ async function bootstrap() {
   }
 }
 
-/* ── action map ─────────────────────────────────────────── */
+/* ── actions ────────────────────────────────────────────── */
 
 const actions = {
-  "item.add": (el) => openItemModal(el.dataset.section || state.sections[0]?.id, null),
+  "item.add": (el) =>
+    openItemModal(el.dataset.section || listBlocks(state)[0]?.id, null),
   "item.edit": (el) => openItemModal(el.dataset.section, el.dataset.id),
   "item.delete": (el) => {
     if (!confirm("Delete item?")) return;
-    const sec = findSection(state, el.dataset.section);
-    if (!sec) return;
-    sec.items = (sec.items || []).filter((i) => i.id !== el.dataset.id);
+    const block = findBlock(state, el.dataset.section);
+    if (!block || block.type !== "list") return;
+    block.items = block.items.filter((i) => i.id !== el.dataset.id);
     paint();
     scheduleSave();
   },
   "item.move": (el) => {
-    const sec = findSection(state, el.dataset.section);
-    if (!sec) return;
-    const idx = (sec.items || []).findIndex((i) => i.id === el.dataset.id);
-    if (moveInArray(sec.items, idx, Number(el.dataset.dir))) {
+    const block = findBlock(state, el.dataset.section);
+    if (!block || block.type !== "list") return;
+    const idx = block.items.findIndex((i) => i.id === el.dataset.id);
+    if (moveInArray(block.items, idx, Number(el.dataset.dir))) {
       paint();
       scheduleSave();
     }
@@ -393,23 +413,35 @@ const actions = {
   "section.add": () => openSectionModal("new"),
   "section.edit": (el) => openSectionModal(el.dataset.id),
   "section.move": (el) => {
-    const idx = state.sections.findIndex((s) => s.id === el.dataset.id);
-    if (moveInArray(state.sections, idx, Number(el.dataset.dir))) {
-      paint();
-      scheduleSave();
-    }
+    // Move only among list blocks, preserving links/pipeline order at front
+    const lists = listBlocks(state);
+    const idx = lists.findIndex((s) => s.id === el.dataset.id);
+    if (idx < 0) return;
+    const dir = Number(el.dataset.dir);
+    const j = idx + dir;
+    if (j < 0 || j >= lists.length) return;
+    const a = lists[idx];
+    const b = lists[j];
+    const ia = state.blocks.indexOf(a);
+    const ib = state.blocks.indexOf(b);
+    state.blocks[ia] = b;
+    state.blocks[ib] = a;
+    paint();
+    scheduleSave();
   },
   "pipe.add": () => openPipeModal("new"),
   "pipe.edit": (el) => openPipeModal(el.dataset.id),
   "pipe.delete": (el) => {
     if (!confirm("Delete pipeline stage?")) return;
-    state.pipeline = (state.pipeline || []).filter((p) => p.id !== el.dataset.id);
+    const pipe = pipelineBlock(state);
+    pipe.stages = pipe.stages.filter((p) => p.id !== el.dataset.id);
     paint();
     scheduleSave();
   },
   "pipe.move": (el) => {
-    const idx = (state.pipeline || []).findIndex((p) => p.id === el.dataset.id);
-    if (moveInArray(state.pipeline, idx, Number(el.dataset.dir))) {
+    const pipe = pipelineBlock(state);
+    const idx = pipe.stages.findIndex((p) => p.id === el.dataset.id);
+    if (moveInArray(pipe.stages, idx, Number(el.dataset.dir))) {
       paint();
       scheduleSave();
     }
@@ -417,8 +449,9 @@ const actions = {
   "link.add": () => openLinkModal("new"),
   "link.edit": (el) => openLinkModal(el.dataset.id),
   "link.move": (el) => {
-    const idx = (state.links || []).findIndex((l) => l.id === el.dataset.id);
-    if (moveInArray(state.links, idx, Number(el.dataset.dir))) {
+    const links = linksBlock(state);
+    const idx = links.items.findIndex((l) => l.id === el.dataset.id);
+    if (moveInArray(links.items, idx, Number(el.dataset.dir))) {
       paint();
       scheduleSave();
     }
@@ -440,7 +473,7 @@ const actions = {
     if (!confirm("Reset board to server default?")) return;
     try {
       const body = await api.resetBoard();
-      state = normalizeBoard(body.data);
+      state = ensureCoreBlocks(normalizeBoard(body.data));
       paint();
       cacheLocal();
       setBackendStatus("backend: reset · r" + api.revision, true);
@@ -464,8 +497,10 @@ const actions = {
   "item.modal-delete": () => {
     if (!editCtx?.itemId) return;
     if (!confirm("Delete this item?")) return;
-    const sec = findSection(state, editCtx.sectionId);
-    if (sec) sec.items = (sec.items || []).filter((i) => i.id !== editCtx.itemId);
+    const block = findBlock(state, editCtx.sectionId);
+    if (block && block.type === "list") {
+      block.items = block.items.filter((i) => i.id !== editCtx.itemId);
+    }
     closeModals();
     paint();
     scheduleSave();
@@ -474,7 +509,7 @@ const actions = {
   "section.modal-delete": () => {
     if (!editCtx || editCtx.id === "new") return;
     if (!confirm("Delete this entire section?")) return;
-    state.sections = state.sections.filter((s) => s.id !== editCtx.id);
+    state.blocks = state.blocks.filter((b) => b.id !== editCtx.id);
     closeModals();
     paint();
     scheduleSave();
@@ -483,7 +518,8 @@ const actions = {
   "pipe.modal-delete": () => {
     if (!editCtx || editCtx.id === "new") return;
     if (!confirm("Delete pipeline stage?")) return;
-    state.pipeline = (state.pipeline || []).filter((p) => p.id !== editCtx.id);
+    const pipe = pipelineBlock(state);
+    pipe.stages = pipe.stages.filter((p) => p.id !== editCtx.id);
     closeModals();
     paint();
     scheduleSave();
@@ -492,7 +528,8 @@ const actions = {
   "link.modal-delete": () => {
     if (!editCtx || editCtx.id === "new") return;
     if (!confirm("Delete nav link?")) return;
-    state.links = (state.links || []).filter((l) => l.id !== editCtx.id);
+    const links = linksBlock(state);
+    links.items = links.items.filter((l) => l.id !== editCtx.id);
     closeModals();
     paint();
     scheduleSave();
@@ -506,7 +543,7 @@ document.addEventListener("click", (e) => {
     return;
   }
   const action = t.dataset.action;
-  if (action === "section.rename") return; // handled on input
+  if (action === "section.rename") return;
   const fn = actions[action];
   if (fn) {
     e.preventDefault();
@@ -517,8 +554,8 @@ document.addEventListener("click", (e) => {
 document.addEventListener("input", (e) => {
   const t = e.target;
   if (t.dataset?.action === "section.rename" && t.dataset.id) {
-    const sec = findSection(state, t.dataset.id);
-    if (sec) {
+    const sec = findBlock(state, t.dataset.id);
+    if (sec && sec.type === "list") {
       sec.title = t.value;
       scheduleSave();
     }
@@ -539,7 +576,7 @@ $("import-file")?.addEventListener("change", (e) => {
   const reader = new FileReader();
   reader.onload = () => {
     try {
-      state = normalizeBoard(JSON.parse(reader.result));
+      state = ensureCoreBlocks(normalizeBoard(JSON.parse(reader.result)));
       paint();
       scheduleSave();
     } catch (err) {
@@ -550,6 +587,5 @@ $("import-file")?.addEventListener("change", (e) => {
   e.target.value = "";
 });
 
-// init
 paint();
 bootstrap();
