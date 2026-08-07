@@ -1,7 +1,14 @@
-.DS_Store
+
 ._*
 ~$*
-*.tmp
+backend/.dev.vars
+backend/node_modules/
+# Backend secrets / local wrangler
+backend/.wrangler/
+.DS_Store
 .env
 .env.*
 .obsidian/
+*.pem
+pharos-workbench-api-key.txt
+*.tmp

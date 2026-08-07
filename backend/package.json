@@ -1,0 +1,17 @@
+{
+  "name": "pharos-workbench-api",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:local": "wrangler d1 migrations apply pharos-workbench --local",
+    "db:remote": "wrangler d1 migrations apply pharos-workbench --remote",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250807.0",
+    "typescript": "^5.8.0",
+    "wrangler": "^4.111.0"
+  }
+}

@@ -15,6 +15,28 @@ Browser-openable HTML surfaces for the PHAROS method-formation corpus.
 
 ## Operational workbench
 
+## Backend (Cloudflare Worker + D1)
+
+Durable board API:
+
+- **URL:** `https://pharos-workbench-api.martinlepage26.workers.dev`
+- **Source:** `backend/` (Worker `pharos-workbench-api`, D1 `pharos-workbench`)
+- **Auth:** `Authorization: Bearer <WORKBENCH_API_KEY>`
+- **Key on this machine:** `~/.secrets/pharos-workbench-api-key.txt` (never commit)
+
+In the workbench UI: click **Backend**, paste the API key once, enable auto-sync.
+Every edit saves to D1 (with localStorage as offline cache). Use **☁ Sync now** to force.
+
+```bash
+cd backend
+unset CLOUDFLARE_API_TOKEN
+wrangler d1 migrations apply pharos-workbench --remote
+wrangler deploy
+printf '%s' "$KEY" | wrangler secret put WORKBENCH_API_KEY
+```
+
+
+
 The first interface (`index.html` / `pharos_dashboard.html`) is a **live CRUD board**:
 
 - Add / edit / delete **items**, **sections**, **pipeline stages**, and **nav links**

@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pharos-workbench-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-03-01",
+  "account_id": "1713c51cc6fbcf8d7143526b93495b76",
+  "workers_dev": true,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pharos-workbench",
+      "database_id": "1793578c-ca73-41d8-a208-2208b62b3585",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    "BOARD_ID": "main",
+    "CORS_ORIGINS": "https://martinlepage26-bit.github.io,http://127.0.0.1:8765,http://localhost:8765,null"
+  }
+}

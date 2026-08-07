@@ -151,9 +151,12 @@ select.field{cursor:pointer}
     <button class="btn" id="btn-add-pipeline" type="button">+ Pipeline stage</button>
     <span class="spacer"></span>
     <span class="saved" id="save-status">ready</span>
+    <button class="btn primary" id="btn-sync" type="button">☁ Sync now</button>
+    <button class="btn" id="btn-backend" type="button">Backend</button>
     <button class="btn" id="btn-export" type="button">Export JSON</button>
     <button class="btn" id="btn-import" type="button">Import JSON</button>
     <button class="btn" id="btn-reset" type="button">Reset seed</button>
+    <span class="saved" id="backend-status" title="Backend status">backend: offline</span>
     <input type="file" id="import-file" accept="application/json,.json" class="sr-only">
   </div>
 
@@ -282,11 +285,34 @@ select.field{cursor:pointer}
   </div>
 </div>
 
+
+<!-- Backend settings modal -->
+<div class="modal-bg" id="modal-backend" role="dialog" aria-modal="true">
+  <div class="modal">
+    <h3>Backend (Cloudflare D1)</h3>
+    <p class="hint">Durable storage for this workbench. API key is stored only in this browser (localStorage), never in the public HTML.</p>
+    <label for="b-url">API base URL</label>
+    <input class="field" id="b-url" placeholder="https://pharos-workbench-api.….workers.dev">
+    <label for="b-key">API key (Bearer)</label>
+    <input class="field" id="b-key" type="password" placeholder="paste WORKBENCH_API_KEY" autocomplete="off">
+    <label><input type="checkbox" id="b-enabled" checked> Use remote backend</label>
+    <label><input type="checkbox" id="b-autosync" checked> Auto-sync on every save</label>
+    <div class="hint" id="b-hint">Default API: https://pharos-workbench-api.martinlepage26.workers.dev</div>
+    <div class="actions">
+      <button class="btn" type="button" id="b-test">Test connection</button>
+      <button class="btn ghost" type="button" id="b-cancel">Cancel</button>
+      <button class="btn primary" type="button" id="b-save">Save settings</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function () {
   'use strict';
 
   const STORAGE_KEY = 'pharos-workbench-v1';
+  const CFG_KEY = 'pharos-workbench-backend-cfg';
+  const DEFAULT_API = 'https://pharos-workbench-api.martinlepage26.workers.dev';
   const uid = () => 'id_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 
   const SEED = {
@@ -437,7 +463,143 @@ select.field{cursor:pointer}
   let editSection = null;   // sectionId or 'new'
   let editPipe = null;      // stage id or 'new'
   let editLink = null;      // link id or 'new'
+
   let saveTimer = null;
+  let remoteRevision = 0;
+  let syncing = false;
+
+  function loadCfg() {
+    try {
+      return Object.assign({
+        enabled: true,
+        autosync: true,
+        apiUrl: DEFAULT_API,
+        apiKey: ''
+      }, JSON.parse(localStorage.getItem(CFG_KEY) || '{}'));
+    } catch (e) {
+      return { enabled: true, autosync: true, apiUrl: DEFAULT_API, apiKey: '' };
+    }
+  }
+  function saveCfg(cfg) {
+    localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
+  }
+  let cfg = loadCfg();
+
+  function setBackendStatus(text, ok) {
+    const el = document.getElementById('backend-status');
+    if (!el) return;
+    el.textContent = text;
+    el.classList.toggle('ok', !!ok);
+  }
+
+  async function apiFetch(path, options = {}, attempt = 0) {
+    if (!cfg.apiUrl || !cfg.apiKey) throw new Error('API URL or key missing — open Backend settings');
+    const url = cfg.apiUrl.replace(/\/$/, '') + path;
+    const headers = Object.assign({
+      'Authorization': 'Bearer ' + cfg.apiKey,
+      'Content-Type': 'application/json',
+      'X-Workbench-Client': 'pharos-workbench-web'
+    }, options.headers || {});
+    let res;
+    try {
+      res = await fetch(url, Object.assign({}, options, { headers }));
+    } catch (e) {
+      if (attempt < 4) {
+        await new Promise(r => setTimeout(r, 200 * (attempt + 1)));
+        return apiFetch(path, options, attempt + 1);
+      }
+      throw e;
+    }
+    // workers.dev occasionally returns 1042 HTML — retry
+    if ((res.status === 404 || res.status >= 500) && attempt < 5) {
+      const text = await res.clone().text();
+      if (text.includes('error code: 1042') || res.status >= 500) {
+        await new Promise(r => setTimeout(r, 250 * (attempt + 1)));
+        return apiFetch(path, options, attempt + 1);
+      }
+    }
+    return res;
+  }
+
+  async function remoteLoad() {
+    const res = await apiFetch('/api/board');
+    if (!res.ok) throw new Error('GET /api/board → ' + res.status);
+    const body = await res.json();
+    remoteRevision = body.revision || 0;
+    if (body.exists && body.data) return body.data;
+    return null;
+  }
+
+  async function remoteSave(data, force) {
+    const payload = {
+      data,
+      expected_revision: force ? null : (remoteRevision || null),
+      client: 'pharos-workbench-web'
+    };
+    const res = await apiFetch('/api/board', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+      headers: remoteRevision ? { 'If-Match': 'W/"' + remoteRevision + '"' } : {}
+    });
+    if (res.status === 409) {
+      const conf = await res.json();
+      throw Object.assign(new Error('revision_conflict'), { conflict: conf });
+    }
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error('PUT /api/board → ' + res.status + ' ' + t.slice(0, 120));
+    }
+    const body = await res.json();
+    remoteRevision = body.revision || remoteRevision;
+    return body;
+  }
+
+  async function syncNow(force) {
+    if (syncing) return;
+    if (!cfg.enabled) { setBackendStatus('backend: disabled', false); return; }
+    if (!cfg.apiKey) { setBackendStatus('backend: need API key', false); openBackendModal(); return; }
+    syncing = true;
+    setBackendStatus('backend: syncing…', false);
+    try {
+      await remoteSave(state, !!force);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      setBackendStatus('backend: synced · r' + remoteRevision, true);
+      const el = document.getElementById('save-status');
+      if (el) { el.textContent = 'cloud saved · r' + remoteRevision; el.classList.add('ok'); }
+    } catch (e) {
+      if (e.conflict) {
+        const pull = confirm('Board changed on server (r' + e.conflict.current_revision + '). Pull server version and overwrite local? Cancel keeps local (then Sync force).');
+        if (pull) {
+          try {
+            const data = await remoteLoad();
+            if (data) { state = data; render(); localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+            setBackendStatus('backend: pulled · r' + remoteRevision, true);
+          } catch (e2) {
+            setBackendStatus('backend: conflict pull failed', false);
+            alert(e2.message);
+          }
+        } else {
+          setBackendStatus('backend: conflict · r' + e.conflict.current_revision, false);
+        }
+      } else {
+        setBackendStatus('backend: error', false);
+        console.error(e);
+        alert('Sync failed: ' + e.message);
+      }
+    } finally {
+      syncing = false;
+    }
+  }
+
+  function openBackendModal() {
+    document.getElementById('b-url').value = cfg.apiUrl || DEFAULT_API;
+    document.getElementById('b-key').value = cfg.apiKey || '';
+    document.getElementById('b-enabled').checked = cfg.enabled !== false;
+    document.getElementById('b-autosync').checked = cfg.autosync !== false;
+    document.getElementById('modal-backend').classList.add('open');
+  }
+
+
 
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
 
@@ -458,10 +620,14 @@ select.field{cursor:pointer}
     state.meta.windowNewest = state.meta.windowNewest || new Date().toLocaleString();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     const el = document.getElementById('save-status');
-    el.textContent = flash || ('saved · ' + new Date().toLocaleTimeString());
+    el.textContent = flash || ('local · ' + new Date().toLocaleTimeString());
     el.classList.add('ok');
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => el.classList.remove('ok'), 1600);
+    if (cfg.enabled && cfg.autosync && cfg.apiKey) {
+      clearTimeout(window.__wbRemoteTimer);
+      window.__wbRemoteTimer = setTimeout(() => { syncNow(false); }, 600);
+    }
   }
 
   function scheduleSave() {
@@ -829,10 +995,43 @@ select.field{cursor:pointer}
     if (t.id === 'btn-reset') {
       if (confirm('Reset workbench to seed data? This replaces your local board.')) {
         state = clone(SEED);
-        // re-id seed so ids stay unique-ish
         persist('reset to seed');
         render();
+        if (cfg.enabled && cfg.apiKey) syncNow(true);
       }
+      return;
+    }
+    if (t.id === 'btn-sync') { syncNow(false); return; }
+    if (t.id === 'btn-backend') { openBackendModal(); return; }
+    if (t.id === 'b-cancel') { closeModals(); return; }
+    if (t.id === 'b-save') {
+      cfg = {
+        enabled: document.getElementById('b-enabled').checked,
+        autosync: document.getElementById('b-autosync').checked,
+        apiUrl: document.getElementById('b-url').value.trim().replace(/\/$/, '') || DEFAULT_API,
+        apiKey: document.getElementById('b-key').value.trim()
+      };
+      saveCfg(cfg);
+      closeModals();
+      setBackendStatus(cfg.enabled ? (cfg.apiKey ? 'backend: configured' : 'backend: need API key') : 'backend: disabled', !!cfg.apiKey && cfg.enabled);
+      if (cfg.enabled && cfg.apiKey) bootstrapRemote();
+      return;
+    }
+    if (t.id === 'b-test') {
+      cfg.apiUrl = document.getElementById('b-url').value.trim().replace(/\/$/, '') || DEFAULT_API;
+      cfg.apiKey = document.getElementById('b-key').value.trim();
+      (async () => {
+        try {
+          const res = await apiFetch('/api/health');
+          // health is public — if key wrong board will fail
+          const h = await res.json();
+          const b = await apiFetch('/api/board');
+          const bj = await b.json();
+          alert('OK\nhealth: ' + JSON.stringify(h) + '\nboard revision: ' + (bj.revision || 0) + ' exists=' + !!bj.exists);
+        } catch (e) {
+          alert('Test failed: ' + e.message);
+        }
+      })();
       return;
     }
 
@@ -974,8 +1173,34 @@ select.field{cursor:pointer}
     if (f && /json$/i.test(f.name)) importJson(f);
   });
 
+  async function bootstrapRemote() {
+    if (!cfg.enabled || !cfg.apiKey) {
+      setBackendStatus(cfg.enabled ? 'backend: need API key' : 'backend: disabled', false);
+      return;
+    }
+    setBackendStatus('backend: loading…', false);
+    try {
+      const remote = await remoteLoad();
+      if (remote) {
+        state = remote;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        render();
+        setBackendStatus('backend: online · r' + remoteRevision, true);
+      } else {
+        // push local seed/state up
+        await remoteSave(state, true);
+        setBackendStatus('backend: seeded · r' + remoteRevision, true);
+      }
+    } catch (e) {
+      console.warn('remote bootstrap failed', e);
+      setBackendStatus('backend: offline · local', false);
+    }
+  }
+
   render();
   persist('ready · local board');
+  setBackendStatus(cfg.apiKey ? 'backend: connecting…' : 'backend: need API key', false);
+  bootstrapRemote();
 })();
 </script>
 </body>
