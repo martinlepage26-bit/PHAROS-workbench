@@ -77,8 +77,8 @@ function renderPipeline(block) {
           <button class="btn sm icon" type="button" data-action="pipe.move" data-id="${esc(p.id)}" data-dir="1" ${i === stages.length - 1 ? "disabled" : ""} title="Move right">›</button>
           <button class="btn sm icon danger" type="button" data-action="pipe.delete" data-id="${esc(p.id)}" title="Remove">×</button>
         </div>`;
-        return `<div style="flex:1 1 100px;min-width:92px">${body}</div>${
-          i < stages.length - 1 ? '<div class="pipe-arrow">→</div>' : ""
+        return `<div class="pipe-cell" style="flex:1 1 88px;min-width:84px">${body}</div>${
+          i < stages.length - 1 ? '<div class="pipe-arrow" aria-hidden="true">→</div>' : ""
         }`;
       })
       .join("") +
