@@ -12,6 +12,86 @@ export function uid(prefix = "id") {
   );
 }
 
+const URL_RE =
+  /\bhttps?:\/\/[^\s<>"'`)\]]+/gi;
+const MAILTO_RE = /\bmailto:[^\s<>"'`)\]]+/gi;
+
+/** Pull http(s)/mailto URLs from free text. */
+export function extractUrls(text) {
+  const s = String(text || "");
+  const found = [];
+  for (const re of [URL_RE, MAILTO_RE]) {
+    const m = s.match(re) || [];
+    for (let u of m) {
+      u = u.replace(/[.,;:!?]+$/g, "");
+      if (!found.includes(u)) found.push(u);
+    }
+  }
+  return found;
+}
+
+function guessLinkLabel(url, index) {
+  const u = (url || "").toLowerCase();
+  if (u.startsWith("mailto:")) return "Email";
+  if (u.includes("openai.com") || u.includes("chatgpt.com")) return "OpenAI billing";
+  if (u.includes("stripe.com")) return "Stripe";
+  if (u.includes("shopify.com")) return "Shopify";
+  if (u.includes("apple.com") || u.includes("reportaproblem.apple.com"))
+    return "Apple";
+  if (u.includes("base44")) return "Base44";
+  if (u.includes("mail.google.com") || u.includes("gmail.com")) return "Open email";
+  if (u.includes("drive.google.com") || u.includes("docs.google.com"))
+    return "Open Drive";
+  if (u.includes("granola.ai")) return "Open meeting";
+  if (u.includes("github.com")) return "Open on GitHub";
+  if (u.includes("calendar.google.com")) return "Open calendar";
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, "");
+    return host || "Open link";
+  } catch {
+    return index === 0 ? "Open" : "Open link " + (index + 1);
+  }
+}
+
+/**
+ * Normalize item.links[] from url + links + URLs found in text.
+ * Always returns { url, links: [{label,url}] }.
+ */
+export function normalizeItemLinks(item) {
+  const it = item && typeof item === "object" ? { ...item } : {};
+  const links = [];
+  const seen = new Set();
+
+  function add(url, label) {
+    if (!url || typeof url !== "string") return;
+    const clean = url.trim().replace(/[.,;:!?]+$/g, "");
+    if (!clean || seen.has(clean)) return;
+    seen.add(clean);
+    links.push({
+      label: (label && String(label).trim()) || guessLinkLabel(clean, links.length),
+      url: clean,
+    });
+  }
+
+  // Explicit multi-links first
+  if (Array.isArray(it.links)) {
+    for (const l of it.links) {
+      if (!l) continue;
+      if (typeof l === "string") add(l);
+      else add(l.url, l.label);
+    }
+  }
+  // Legacy single url
+  add(it.url);
+  // URLs embedded in the body text (emails, paste, etc.)
+  for (const u of extractUrls(it.text)) add(u);
+  for (const u of extractUrls(it.source)) add(u);
+
+  it.links = links;
+  it.url = links[0]?.url || it.url || "";
+  return it;
+}
+
 export function emptyBoard() {
   return {
     version: 3,
@@ -88,16 +168,19 @@ export function normalizeBoard(raw) {
       empty: s.empty || "Empty",
       linkLabel: s.linkLabel || "",
       linkUrl: s.linkUrl || "",
-      items: (s.items || []).map((it) => ({
-        id: it.id || uid("item"),
-        time: it.time || "",
-        source: it.source || "",
-        text: it.text || "",
-        tag: it.tag || "",
-        tagKind: it.tagKind || "",
-        kind: it.kind || "",
-        url: it.url || "",
-      })),
+      items: (s.items || []).map((it) =>
+        normalizeItemLinks({
+          id: it.id || uid("item"),
+          time: it.time || "",
+          source: it.source || "",
+          text: it.text || "",
+          tag: it.tag || "",
+          tagKind: it.tagKind || "",
+          kind: it.kind || "",
+          url: it.url || "",
+          links: it.links,
+        })
+      ),
     });
   }
   return { version: 3, meta, blocks };
@@ -142,16 +225,19 @@ function normalizeBlock(b) {
       empty: b.empty || "Empty",
       linkLabel: b.linkLabel || "",
       linkUrl: b.linkUrl || "",
-      items: (b.items || []).map((it) => ({
-        id: it.id || uid("item"),
-        time: it.time || "",
-        source: it.source || "",
-        text: it.text || "",
-        tag: it.tag || "",
-        tagKind: it.tagKind || "",
-        kind: it.kind || "",
-        url: it.url || "",
-      })),
+      items: (b.items || []).map((it) =>
+        normalizeItemLinks({
+          id: it.id || uid("item"),
+          time: it.time || "",
+          source: it.source || "",
+          text: it.text || "",
+          tag: it.tag || "",
+          tagKind: it.tagKind || "",
+          kind: it.kind || "",
+          url: it.url || "",
+          links: it.links,
+        })
+      ),
     };
   }
   return null;

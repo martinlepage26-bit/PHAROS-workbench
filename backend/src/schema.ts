@@ -14,6 +14,8 @@ export type Meta = {
 
 export type LinkItem = { id: string; label: string; url: string };
 export type Stage = { id: string; code: string; label: string; url: string };
+export type ActionLink = { label: string; url: string };
+
 export type ListItem = {
   id: string;
   time: string;
@@ -23,7 +25,74 @@ export type ListItem = {
   tagKind: string;
   kind: string;
   url: string;
+  links?: ActionLink[];
 };
+
+const URL_RE = /\bhttps?:\/\/[^\s<>"'`)\]]+/gi;
+const MAILTO_RE = /\bmailto:[^\s<>"'`)\]]+/gi;
+
+function extractUrls(text: string): string[] {
+  const s = String(text || "");
+  const found: string[] = [];
+  for (const re of [URL_RE, MAILTO_RE]) {
+    const m = s.match(re) || [];
+    for (let u of m) {
+      u = u.replace(/[.,;:!?]+$/g, "");
+      if (!found.includes(u)) found.push(u);
+    }
+  }
+  return found;
+}
+
+function guessLinkLabel(url: string, index: number): string {
+  const u = (url || "").toLowerCase();
+  if (u.startsWith("mailto:")) return "Email";
+  if (u.includes("openai.com") || u.includes("chatgpt.com")) return "OpenAI billing";
+  if (u.includes("stripe.com")) return "Stripe";
+  if (u.includes("shopify.com")) return "Shopify";
+  if (u.includes("apple.com")) return "Apple";
+  if (u.includes("base44")) return "Base44";
+  if (u.includes("mail.google.com") || u.includes("gmail")) return "Open email";
+  if (u.includes("drive.google.com") || u.includes("docs.google.com"))
+    return "Open Drive";
+  if (u.includes("granola.ai")) return "Open meeting";
+  if (u.includes("github.com")) return "Open on GitHub";
+  try {
+    return new URL(url).hostname.replace(/^www\./, "") || "Open link";
+  } catch {
+    return index === 0 ? "Open" : `Open link ${index + 1}`;
+  }
+}
+
+export function normalizeItemLinks(item: ListItem): ListItem {
+  const links: ActionLink[] = [];
+  const seen = new Set<string>();
+  const add = (url?: string, label?: string) => {
+    if (!url) return;
+    const clean = String(url).trim().replace(/[.,;:!?]+$/g, "");
+    if (!clean || seen.has(clean)) return;
+    seen.add(clean);
+    links.push({
+      label: (label && label.trim()) || guessLinkLabel(clean, links.length),
+      url: clean,
+    });
+  };
+  if (Array.isArray(item.links)) {
+    for (const l of item.links) {
+      if (!l) continue;
+      if (typeof l === "string") add(l);
+      else add(l.url, l.label);
+    }
+  }
+  add(item.url);
+  for (const u of extractUrls(item.text || "")) add(u);
+  for (const u of extractUrls(item.source || "")) add(u);
+  return {
+    ...item,
+    links,
+    url: links[0]?.url || item.url || "",
+  };
+}
 
 export type LinksBlock = {
   type: "links";
@@ -133,16 +202,19 @@ export function legacyToBlocks(data: LegacyBoard): Block[] {
       empty: s.empty || "Empty",
       linkLabel: s.linkLabel || "",
       linkUrl: s.linkUrl || "",
-      items: (s.items || []).map((it) => ({
-        id: it.id,
-        time: it.time || "",
-        source: it.source || "",
-        text: it.text || "",
-        tag: it.tag || "",
-        tagKind: it.tagKind || "",
-        kind: it.kind || "",
-        url: it.url || "",
-      })),
+      items: (s.items || []).map((it) =>
+        normalizeItemLinks({
+          id: it.id,
+          time: it.time || "",
+          source: it.source || "",
+          text: it.text || "",
+          tag: it.tag || "",
+          tagKind: it.tagKind || "",
+          kind: it.kind || "",
+          url: it.url || "",
+          links: it.links,
+        })
+      ),
     });
   }
 
@@ -188,16 +260,19 @@ function normalizeBlock(b: Block): Block | null {
       empty: b.empty || "Empty",
       linkLabel: b.linkLabel || "",
       linkUrl: b.linkUrl || "",
-      items: (b.items || []).map((it) => ({
-        id: it.id,
-        time: it.time || "",
-        source: it.source || "",
-        text: it.text || "",
-        tag: it.tag || "",
-        tagKind: it.tagKind || "",
-        kind: it.kind || "",
-        url: it.url || "",
-      })),
+      items: (b.items || []).map((it) =>
+        normalizeItemLinks({
+          id: it.id,
+          time: it.time || "",
+          source: it.source || "",
+          text: it.text || "",
+          tag: it.tag || "",
+          tagKind: it.tagKind || "",
+          kind: it.kind || "",
+          url: it.url || "",
+          links: it.links,
+        })
+      ),
     };
   }
   return null;

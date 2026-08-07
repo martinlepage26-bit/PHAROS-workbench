@@ -89,26 +89,43 @@ function renderPipeline(block) {
   );
 }
 
+function actionLinksOf(item) {
+  const links = Array.isArray(item.links) ? item.links.filter((l) => l && l.url) : [];
+  if (links.length) return links;
+  if (item.url) return [{ label: "Open", url: item.url }];
+  return [];
+}
+
 function renderItem(section, item, index) {
   const n = (section.items || []).length;
-  const kind = item.kind
-    ? `<span class="tag">${esc(item.kind)}</span> `
-    : "";
   const who = item.source
     ? `<span class="who">${esc(item.source)}</span>${item.text ? " — " : ""}`
     : "";
   const text = item.text ? esc(item.text) : "";
-  const main = item.url
-    ? `${kind}<a href="${esc(item.url)}" target="_blank" rel="noopener">${who}${text || esc(item.url)}</a>`
-    : `${kind}${who}${text}`;
+  const main = `${who}${text}` || "<span class='empty'>Empty task</span>";
   const tag = item.tag
-    ? `<div class="tag ${tagClass(item.tagKind)}">${esc(item.tag)}</div>`
+    ? `<span class="tag ${tagClass(item.tagKind)}">${esc(item.tag)}</span>`
+    : item.kind
+      ? `<span class="tag">${esc(item.kind)}</span>`
+      : "";
+  const actions = actionLinksOf(item);
+  const actionHtml = actions.length
+    ? `<div class="action-links">${actions
+        .map(
+          (l, i) =>
+            `<a class="action-btn${i === 0 ? " primary" : ""}" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label || "Open")}</a>`
+        )
+        .join("")}</div>`
     : "";
 
   return `
-    <div class="row">
+    <div class="row${actions.length ? " has-actions" : ""}">
       <div class="when">${esc(item.time || "—")}</div>
-      <div class="what">${main || "<span class='empty'>Empty task</span>"}${tag}</div>
+      <div class="what">
+        <div class="what-main">${main}</div>
+        ${tag ? `<div class="tag-row">${tag}</div>` : ""}
+        ${actionHtml}
+      </div>
       <div class="row-actions">
         <button class="btn sm icon" type="button" data-action="item.edit" data-section="${esc(section.id)}" data-id="${esc(item.id)}" title="Edit">✎</button>
         <button class="btn sm icon" type="button" data-action="item.move" data-section="${esc(section.id)}" data-id="${esc(item.id)}" data-dir="-1" ${index === 0 ? "disabled" : ""} title="Up">↑</button>

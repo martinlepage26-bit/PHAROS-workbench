@@ -438,17 +438,51 @@ a.chip-link:hover {
   line-height: 1.45;
 }
 
+.what-main { color: var(--ink); }
 .what .who { font-weight: 650; color: var(--ink); }
+.tag-row { margin-top: 4px; }
 
-.what a {
-  color: var(--ink);
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
+.action-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
 }
 
-.what a:hover {
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 650;
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid #ddd6fe;
+  background: var(--accent-soft);
   color: var(--accent);
-  border-color: var(--accent);
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.action-btn:hover {
+  background: #ede9fe;
+  border-color: #c4b5fd;
+  color: var(--accent-hover);
+}
+
+.action-btn.primary {
+  background: var(--accent);
+  border-color: transparent;
+  color: #fff;
+}
+
+.action-btn.primary:hover {
+  background: var(--accent-hover);
+  color: #fff;
+}
+
+.row.has-actions .what-main {
+  font-weight: 500;
 }
 
 .tag {

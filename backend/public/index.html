@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pharos Workbench</title>
-  <!-- palette-pharos-purple-1786138990 -->
+  <!-- action-links-1786141912 -->
   <meta name="description" content="Your PHAROS work board — tasks, meetings, papers, EMERAULD.">
   <meta name="theme-color" content="#faf9f7">
   <link rel="stylesheet" href="/css/app.css">
@@ -53,13 +53,18 @@
     <label for="m-section">List</label>
     <select class="field" id="m-section"></select>
     <label for="m-text">What</label>
-    <textarea class="field" id="m-text" rows="3" placeholder="e.g. Pay OpenAI invoice"></textarea>
+    <textarea class="field" id="m-text" rows="3" placeholder="e.g. Pay OpenAI invoice — paste email text; links are detected"></textarea>
     <label for="m-source">Who / source (optional)</label>
     <input class="field" id="m-source" placeholder="e.g. Stripe, Patricia, GitHub">
     <label for="m-time">When (optional)</label>
     <input class="field" id="m-time" placeholder="e.g. today, Aug 12, 18:30">
-    <label for="m-url">Link (optional)</label>
-    <input class="field" id="m-url" placeholder="https://…">
+    <label for="m-url">Main action link</label>
+    <input class="field" id="m-url" placeholder="https://… invoice, email, or page to open">
+    <label for="m-url-label">Button label (optional)</label>
+    <input class="field" id="m-url-label" placeholder="e.g. Pay invoice, Open email">
+    <label for="m-more-links">More action links (optional)</label>
+    <textarea class="field" id="m-more-links" rows="3" placeholder="One per line:&#10;Open email | https://mail.google.com/…&#10;https://billing.example.com/…"></textarea>
+    <p class="help" style="margin-top:6px">If the email or note includes URLs, they are added automatically as buttons.</p>
     <button type="button" class="toggle-advanced" data-action="toggle-advanced">More options</button>
     <div class="advanced" id="item-advanced">
       <label for="m-tag">Label</label>

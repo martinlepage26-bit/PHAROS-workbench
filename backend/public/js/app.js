@@ -4,12 +4,14 @@ import { createApi } from "./api.js";
 import {
   emptyBoard,
   ensureCoreBlocks,
+  extractUrls,
   findBlock,
   findListItem,
   linksBlock,
   listBlocks,
   moveInArray,
   normalizeBoard,
+  normalizeItemLinks,
   pipelineBlock,
   uid,
 } from "./model.js";
@@ -120,10 +122,11 @@ function openItemModal(sectionId, itemId) {
     tagKind: "",
     kind: "",
     url: "",
+    links: [],
   };
   if (itemId) {
     const hit = findListItem(state, editCtx.sectionId, itemId);
-    if (hit) item = hit.item;
+    if (hit) item = normalizeItemLinks(hit.item);
     $("modal-item-title").textContent = "Edit task";
     $("m-delete").style.display = "";
   } else {
@@ -136,9 +139,41 @@ function openItemModal(sectionId, itemId) {
   $("m-tag").value = item.tag || "";
   $("m-tag-kind").value = item.tagKind || "";
   $("m-kind").value = item.kind || "";
-  $("m-url").value = item.url || "";
+  const primary = (item.links && item.links[0]) || {
+    url: item.url || "",
+    label: "",
+  };
+  $("m-url").value = primary.url || "";
+  $("m-url-label").value =
+    primary.label && primary.label !== "Open" ? primary.label : "";
+  const extra = (item.links || [])
+    .slice(1)
+    .map((l) =>
+      l.label && l.label !== "Open" ? `${l.label} | ${l.url}` : l.url
+    )
+    .join("\n");
+  $("m-more-links").value = extra;
   openModal("modal-item");
   $("m-text")?.focus();
+}
+
+function parseMoreLinks(raw) {
+  const out = [];
+  for (const line of String(raw || "").split(/\n+/)) {
+    const s = line.trim();
+    if (!s) continue;
+    if (s.includes("|")) {
+      const [label, ...rest] = s.split("|");
+      const url = rest.join("|").trim();
+      if (url) out.push({ label: label.trim() || undefined, url });
+    } else if (/^(https?:|mailto:)/i.test(s)) {
+      out.push({ url: s });
+    } else {
+      const urls = extractUrls(s);
+      for (const u of urls) out.push({ url: u });
+    }
+  }
+  return out;
 }
 
 function saveItemModal() {
@@ -146,7 +181,12 @@ function saveItemModal() {
   const sectionId = $("m-section").value;
   let block = findBlock(state, sectionId);
   if (!block || block.type !== "list") return;
-  const payload = {
+  const mainUrl = $("m-url").value.trim();
+  const mainLabel = $("m-url-label").value.trim();
+  const links = [];
+  if (mainUrl) links.push({ label: mainLabel || undefined, url: mainUrl });
+  for (const l of parseMoreLinks($("m-more-links").value)) links.push(l);
+  const payload = normalizeItemLinks({
     id: editCtx.itemId || uid("item"),
     time: $("m-time").value.trim(),
     source: $("m-source").value.trim(),
@@ -154,8 +194,9 @@ function saveItemModal() {
     tag: $("m-tag").value.trim(),
     tagKind: $("m-tag-kind").value,
     kind: $("m-kind").value,
-    url: $("m-url").value.trim(),
-  };
+    url: mainUrl,
+    links,
+  });
   if (editCtx.itemId && editCtx.sectionId !== sectionId) {
     const old = findBlock(state, editCtx.sectionId);
     if (old && old.type === "list") {
