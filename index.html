@@ -313,13 +313,14 @@ select.field{cursor:pointer}
   const STORAGE_KEY = 'pharos-workbench-v1';
   const CFG_KEY = 'pharos-workbench-backend-cfg';
   const DEFAULT_API = 'https://pharos-workbench-api.martinlepage26.workers.dev';
+  const DEFAULT_API_KEY = "noG92RIW9rTHL8josnqKv89XdbWNSBJxu_OnrptMXEs";
   const uid = () => 'id_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 
   const SEED = {
     version: 1,
     meta: {
       title: 'Pharos · Workbench',
-      subtitle: 'Operational board — add, edit, delete, reorder. Saved in this browser.',
+      subtitle: 'Operational board — Cloudflare D1 backend. Auto-sync on every edit.',
       asOf: new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
       windowNewest: new Date().toLocaleString('en-US', { month: 'short', day: '2-digit', hour: 'numeric', minute: '2-digit' }),
       snap: 'live · local persistence',
@@ -469,21 +470,31 @@ select.field{cursor:pointer}
   let syncing = false;
 
   function loadCfg() {
+    const base = {
+      enabled: true,
+      autosync: true,
+      apiUrl: DEFAULT_API,
+      apiKey: (typeof DEFAULT_API_KEY === 'string' ? DEFAULT_API_KEY : '')
+    };
     try {
-      return Object.assign({
-        enabled: true,
-        autosync: true,
-        apiUrl: DEFAULT_API,
-        apiKey: ''
-      }, JSON.parse(localStorage.getItem(CFG_KEY) || '{}'));
+      const stored = JSON.parse(localStorage.getItem(CFG_KEY) || '{}');
+      const merged = Object.assign({}, base, stored);
+      // Always prefer non-empty default key if stored key empty
+      if (!merged.apiKey && base.apiKey) merged.apiKey = base.apiKey;
+      if (!merged.apiUrl) merged.apiUrl = DEFAULT_API;
+      merged.enabled = true;
+      merged.autosync = true;
+      return merged;
     } catch (e) {
-      return { enabled: true, autosync: true, apiUrl: DEFAULT_API, apiKey: '' };
+      return base;
     }
   }
   function saveCfg(cfg) {
     localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
   }
   let cfg = loadCfg();
+  // Persist defaults immediately so this browser is connected without UI
+  saveCfg(cfg);
 
   function setBackendStatus(text, ok) {
     const el = document.getElementById('backend-status');
