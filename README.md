@@ -1,3 +1,5 @@
+**Secure host:** https://pharos-workbench-api.martinlepage26.workers.dev/ (Worker UI + D1 + HttpOnly cookie — no API key in HTML)
+
 # PHAROS Workbench
 
 Browser-openable HTML surfaces for the PHAROS method-formation corpus.

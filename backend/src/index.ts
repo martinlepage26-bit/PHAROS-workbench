@@ -1,9 +1,8 @@
 /**
- * PHAROS Workbench API
- * Durable board state on Cloudflare D1.
- *
- * Auth: Authorization: Bearer <WORKBENCH_API_KEY>
- * Board: GET/PUT /api/board  ·  history GET /api/board/history  ·  health GET /api/health
+ * PHAROS Workbench API + UI
+ * - Static UI from assets (same origin)
+ * - Board state on D1
+ * - Auth: HttpOnly session cookie (preferred) or Bearer WORKBENCH_API_KEY
  */
 
 export interface Env {
@@ -11,6 +10,7 @@ export interface Env {
   WORKBENCH_API_KEY: string;
   BOARD_ID: string;
   CORS_ORIGINS: string;
+  ASSETS: Fetcher;
 }
 
 type BoardRow = {
@@ -21,25 +21,18 @@ type BoardRow = {
   updated_by: string | null;
 };
 
+const COOKIE = "wb_session";
+const SESSION_TTL_SEC = 60 * 60 * 24 * 30; // 30 days
+const encoder = new TextEncoder();
+
 function corsHeaders(env: Env, request: Request): HeadersInit {
   const origin = request.headers.get("Origin") || "";
-  const allowed = (env.CORS_ORIGINS || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  // Allow github pages, local file:// (null), localhost, and same-origin tooling
-  let allow = "*";
-  if (origin && (allowed.includes(origin) || allowed.includes("*"))) {
-    allow = origin;
-  } else if (origin.endsWith(".github.io") || origin.includes("localhost") || origin.includes("127.0.0.1")) {
-    allow = origin;
-  } else if (origin) {
-    allow = origin; // personal workbench; open CORS for browser clients with key
-  }
+  const allow = origin || "*";
   return {
-    "Access-Control-Allow-Origin": allow,
+    "Access-Control-Allow-Origin": allow === "null" ? "null" : allow,
     "Access-Control-Allow-Methods": "GET,PUT,POST,DELETE,OPTIONS",
     "Access-Control-Allow-Headers": "Authorization, Content-Type, If-Match, X-Workbench-Client",
+    "Access-Control-Allow-Credentials": "true",
     "Access-Control-Expose-Headers": "ETag, X-Board-Revision",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
@@ -58,22 +51,110 @@ function json(env: Env, request: Request, body: unknown, status = 200, extra: He
   });
 }
 
-function unauthorized(env: Env, request: Request) {
-  return json(env, request, { error: "unauthorized", hint: "Send Authorization: Bearer <WORKBENCH_API_KEY>" }, 401);
-}
-
-function authorize(request: Request, env: Env): boolean {
-  const key = env.WORKBENCH_API_KEY;
-  if (!key) return false;
-  const auth = request.headers.get("Authorization") || "";
-  if (auth === `Bearer ${key}`) return true;
-  const q = new URL(request.url).searchParams.get("key");
-  if (q && q === key) return true;
-  return false;
-}
-
 function nowIso() {
   return new Date().toISOString();
+}
+
+function b64url(bytes: ArrayBuffer | Uint8Array): string {
+  const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  let s = "";
+  for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function b64urlText(text: string): string {
+  return b64url(encoder.encode(text));
+}
+
+function fromB64url(s: string): Uint8Array {
+  const pad = s.length % 4 === 0 ? "" : "=".repeat(4 - (s.length % 4));
+  const b64 = s.replace(/-/g, "+").replace(/_/g, "/") + pad;
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+async function hmacKey(secret: string): Promise<CryptoKey> {
+  return crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign", "verify"]
+  );
+}
+
+async function signSession(secret: string, exp: number): Promise<string> {
+  const payload = `v1|main|${exp}`;
+  const key = await hmacKey(secret);
+  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
+  return `${b64urlText(payload)}.${b64url(sig)}`;
+}
+
+async function verifySession(secret: string, token: string | null): Promise<boolean> {
+  if (!token || !secret) return false;
+  const parts = token.split(".");
+  if (parts.length !== 2) return false;
+  const [payloadB64, sigB64] = parts;
+  let payload: string;
+  try {
+    payload = new TextDecoder().decode(fromB64url(payloadB64));
+  } catch {
+    return false;
+  }
+  const bits = payload.split("|");
+  if (bits.length !== 3 || bits[0] !== "v1") return false;
+  const exp = Number(bits[2]);
+  if (!Number.isFinite(exp) || exp < Math.floor(Date.now() / 1000)) return false;
+  try {
+    const key = await hmacKey(secret);
+    const sig = fromB64url(sigB64);
+    // subtle.verify wants ArrayBuffer
+    const ok = await crypto.subtle.verify("HMAC", key, sig, encoder.encode(payload));
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+function parseCookies(header: string | null): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!header) return out;
+  for (const part of header.split(";")) {
+    const i = part.indexOf("=");
+    if (i < 0) continue;
+    const k = part.slice(0, i).trim();
+    const v = part.slice(i + 1).trim();
+    out[k] = decodeURIComponent(v);
+  }
+  return out;
+}
+
+function sessionCookie(value: string, maxAge = SESSION_TTL_SEC): string {
+  // Secure + HttpOnly + SameSite=Lax — same-origin Worker UI
+  return `${COOKIE}=${encodeURIComponent(value)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
+}
+
+function clearSessionCookie(): string {
+  return `${COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+}
+
+async function authorize(request: Request, env: Env): Promise<boolean> {
+  const key = env.WORKBENCH_API_KEY;
+  if (!key) return false;
+
+  const auth = request.headers.get("Authorization") || "";
+  if (auth === `Bearer ${key}`) return true;
+
+  const url = new URL(request.url);
+  const q = url.searchParams.get("key");
+  if (q && q === key) return true;
+
+  const cookies = parseCookies(request.headers.get("Cookie"));
+  if (await verifySession(key, cookies[COOKIE] || null)) return true;
+
+  return false;
 }
 
 async function getBoard(env: Env, boardId: string): Promise<BoardRow | null> {
@@ -95,18 +176,90 @@ export default {
     const boardId = url.searchParams.get("board") || env.BOARD_ID || "main";
 
     try {
+      // ── Session endpoints ──────────────────────────────────────────
+      if (path === "/api/session/status" && request.method === "GET") {
+        const ok = await authorize(request, env);
+        return json(env, request, {
+          authenticated: ok,
+          mode: "cookie-or-bearer",
+          cookie: COOKIE,
+        });
+      }
+
+      if (path === "/api/session/login" && request.method === "POST") {
+        let body: { key?: string } = {};
+        try {
+          body = (await request.json()) as { key?: string };
+        } catch {
+          body = {};
+        }
+        if (!body.key || body.key !== env.WORKBENCH_API_KEY) {
+          return json(env, request, { error: "invalid_key" }, 401);
+        }
+        const exp = Math.floor(Date.now() / 1000) + SESSION_TTL_SEC;
+        const token = await signSession(env.WORKBENCH_API_KEY, exp);
+        return json(
+          env,
+          request,
+          { ok: true, expires_at: new Date(exp * 1000).toISOString() },
+          200,
+          { "Set-Cookie": sessionCookie(token) }
+        );
+      }
+
+      // One-shot browser bootstrap: sets HttpOnly cookie and redirects home
+      if (path === "/api/session/bootstrap" && request.method === "GET") {
+        const key = url.searchParams.get("key") || "";
+        if (!key || key !== env.WORKBENCH_API_KEY) {
+          return json(env, request, { error: "invalid_key" }, 401);
+        }
+        const exp = Math.floor(Date.now() / 1000) + SESSION_TTL_SEC;
+        const token = await signSession(env.WORKBENCH_API_KEY, exp);
+        const dest = new URL("/", url.origin);
+        dest.searchParams.set("session", "ok");
+        return new Response(null, {
+          status: 302,
+          headers: {
+            Location: dest.toString(),
+            "Set-Cookie": sessionCookie(token),
+            "Cache-Control": "no-store",
+          },
+        });
+      }
+
+      if (path === "/api/session/logout" && (request.method === "POST" || request.method === "GET")) {
+        return json(
+          env,
+          request,
+          { ok: true },
+          200,
+          { "Set-Cookie": clearSessionCookie() }
+        );
+      }
+
       if (path === "/api/health" || path === "/health") {
         return json(env, request, {
           ok: true,
           service: "pharos-workbench-api",
           time: nowIso(),
           board: boardId,
+          auth: "httponly-cookie-or-bearer",
         });
       }
 
-      // Auth required for all board ops (personal operational data)
+      // ── Board API (auth required) ──────────────────────────────────
       if (path.startsWith("/api/")) {
-        if (!authorize(request, env)) return unauthorized(env, request);
+        if (!(await authorize(request, env))) {
+          return json(
+            env,
+            request,
+            {
+              error: "unauthorized",
+              hint: "Open /api/session/bootstrap?key=… once, or POST /api/session/login, or send Bearer key",
+            },
+            401
+          );
+        }
       }
 
       if (path === "/api/board" && request.method === "GET") {
@@ -138,10 +291,7 @@ export default {
             data,
           },
           200,
-          {
-            ETag: `W/"${row.revision}"`,
-            "X-Board-Revision": String(row.revision),
-          }
+          { ETag: `W/"${row.revision}"`, "X-Board-Revision": String(row.revision) }
         );
       }
 
@@ -203,10 +353,7 @@ export default {
               updated_at: existing.updated_at,
             },
             409,
-            {
-              ETag: `W/"${existing.revision}"`,
-              "X-Board-Revision": String(existing.revision),
-            }
+            { ETag: `W/"${existing.revision}"`, "X-Board-Revision": String(existing.revision) }
           );
         }
 
@@ -252,6 +399,15 @@ export default {
         return json(env, request, { board_id: boardId, events: results || [] });
       }
 
+      if (path.startsWith("/api/")) {
+        return json(env, request, { error: "not_found", path }, 404);
+      }
+
+      // Non-API routes: normally served by Workers Assets (run_worker_first=/api/*).
+      // Fallback if a non-api path reaches the Worker:
+      if (env.ASSETS) {
+        return env.ASSETS.fetch(request);
+      }
       return json(env, request, { error: "not_found", path }, 404);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

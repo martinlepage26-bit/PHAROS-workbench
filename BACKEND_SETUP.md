@@ -1,17 +1,31 @@
-# Connect the workbench to the backend
+# Pharos Workbench — secure host
 
-1. Open https://martinlepage26-bit.github.io/PHAROS-workbench/
-2. Click **Backend**
-3. API URL (default):
-   `https://pharos-workbench-api.martinlepage26.workers.dev`
-4. Paste API key from this machine:
-   ```bash
-   cat ~/.secrets/pharos-workbench-api-key.txt
-   # or
-   bash ~/docs/PHAROS-workbench/backend/print-key.sh
-   ```
-5. Enable **Use remote backend** + **Auto-sync**
-6. **Test connection** → **Save settings**
-7. Status should show `backend: online · rN`
+## Canonical URL
 
-Edits write to Cloudflare D1. localStorage is the offline cache.
+**https://pharos-workbench-api.martinlepage26.workers.dev/**
+
+- Same-origin UI + API on Cloudflare Worker
+- Auth: **HttpOnly / Secure / SameSite=Lax** cookie `wb_session`
+- No API key in page source
+- Board state: Cloudflare **D1** `pharos-workbench`
+
+## Bootstrap (once per browser)
+
+```bash
+KEY=$(cat ~/.secrets/pharos-workbench-api-key.txt)
+xdg-open "https://pharos-workbench-api.martinlepage26.workers.dev/api/session/bootstrap?key=${KEY}"
+```
+
+Or open that URL manually. It sets the cookie and redirects to `/`.
+
+## GitHub Pages
+
+https://martinlepage26-bit.github.io/PHAROS-workbench/ redirects to the Worker.
+
+## Deploy
+
+```bash
+cd ~/docs/PHAROS-workbench/backend
+unset CLOUDFLARE_API_TOKEN
+wrangler deploy
+```
