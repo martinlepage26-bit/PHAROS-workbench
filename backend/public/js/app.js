@@ -1,4 +1,5 @@
 /** Workbench app: data-action dispatcher over v3 blocks. */
+/* build: editctx-fix-v2 */
 
 import { createApi } from "./api.js";
 import {
