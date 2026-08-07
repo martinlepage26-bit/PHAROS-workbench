@@ -13,6 +13,19 @@ Browser-openable HTML surfaces for the PHAROS method-formation corpus.
 | Topics | `pharos`, `workbench`, `method-formation`, `github-pages` |
 | Local / SMB | `~/docs/PHAROS-workbench` · `smb://100.102.190.26/martin-docs/PHAROS-workbench/` |
 
+## Operational workbench
+
+The first interface (`index.html` / `pharos_dashboard.html`) is a **live CRUD board**:
+
+- Add / edit / delete **items**, **sections**, **pipeline stages**, and **nav links**
+- Reorder with ↑↓ / ‹›
+- Inline edit titles, subtitle, timestamps, footer
+- **localStorage** persistence in the browser
+- **Export / Import JSON** (and drag-drop `.json`) to move machines or back up
+- **Reset seed** restores the built-in starter board
+
+Method-formation HTML artifacts remain under `files/` and `files-hub.html`.
+
 ## Live URLs (GitHub Pages)
 
 | Surface | URL |
