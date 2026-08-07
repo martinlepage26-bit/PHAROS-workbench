@@ -2,6 +2,16 @@
 
 Browser-openable HTML surfaces for the PHAROS method-formation corpus.
 
+## Status — SET
+
+| Setting | Value |
+|---------|--------|
+| Repo | public · `martinlepage26-bit/PHAROS-workbench` |
+| Pages | **enabled** · branch `main` · path `/` · HTTPS on · status `built` |
+| Hub homepage | https://martinlepage26-bit.github.io/PHAROS-workbench/ |
+| Topics | `pharos`, `workbench`, `method-formation`, `github-pages` |
+| Local checkout | `~/docs/PHAROS-workbench` |
+
 ## Live URLs (GitHub Pages)
 
 | Surface | URL |
