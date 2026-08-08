@@ -1,4 +1,5 @@
-/* Pharos Workbench — standard PHAROS palette, purple accent */
+/* Pharos Workbench — Paper Pressure room (Dual Register C)
+   Public Cool Beacon (pharos-ai.ca) is a different room — do not mix blues here. */
 
 :root {
   --bg: #faf9f7;
@@ -9,13 +10,11 @@
   --faint: #8b8681;
   --line: #e7e3dd;
   --line-2: #efece7;
-  /* Purple-forward accent (PHAROS book / method purple family) */
+  /* Violet beam — action + charged needs only */
   --accent: #6d28d9;
   --accent-hover: #5b21b6;
   --accent-soft: #f3eefc;
   --accent-mid: #8b5cf6;
-  --accent-2: #4f46e5; /* keep indigo as secondary */
-  --accent-2-soft: #eef0fb;
   --pub: #0f7a52;
   --pub-bg: #e6f4ee;
   --draft: #8a6d1f;
@@ -50,8 +49,6 @@
     --accent-hover: #ddd6fe;
     --accent-soft: #2a2140;
     --accent-mid: #a78bfa;
-    --accent-2: #a5b4fc;
-    --accent-2-soft: #232a4a;
     --pub: #4ade9f;
     --pub-bg: #12352a;
     --draft: #e3c46b;
@@ -76,10 +73,17 @@ body {
   line-height: 1.55;
   color: var(--ink);
   background:
-    radial-gradient(1100px 420px at 8% -12%, var(--accent-soft) 0%, transparent 55%),
-    radial-gradient(900px 380px at 100% 0%, var(--accent-2-soft) 0%, transparent 48%),
+    radial-gradient(1000px 400px at 6% -10%, var(--accent-soft) 0%, transparent 58%),
     var(--bg);
   -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 button, input, textarea, select {
@@ -241,7 +245,7 @@ button, input, textarea, select {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(28, 27, 26, 0.08);
+  box-shadow: 0 4px 12px rgba(28, 27, 26, 0.08);
   padding: 6px;
   z-index: var(--z-dropdown);
 }
@@ -356,7 +360,7 @@ a.chip-link:hover {
 .card {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius);
   padding: 15px 15px 12px;
   box-shadow: var(--shadow);
   display: flex;
@@ -661,11 +665,11 @@ footer {
   width: min(430px, 100%);
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius);
   padding: 20px 18px 16px;
   max-height: 90vh;
   overflow: auto;
-  box-shadow: 0 16px 40px rgba(28, 27, 26, 0.12);
+  box-shadow: 0 8px 20px rgba(28, 27, 26, 0.1);
 }
 
 .modal h3 {
