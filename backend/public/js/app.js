@@ -459,11 +459,51 @@ async function bootstrap() {
         b.linkLabel = "GitHub";
         remapped = true;
       }
+      // EMERAULD: graph view replaces GitHub vault links
+      if (b.id === "sec_emerauld") {
+        if (/github\.com.*EMERAULD/i.test(b.linkUrl || "")) {
+          b.linkUrl = "files/emerauld-graph.html";
+          b.linkLabel = "Open graph";
+          remapped = true;
+        }
+        for (const it of b.items || []) {
+          const wasGh =
+            /github\.com.*EMERAULD/i.test(it.url || "") ||
+            (it.links || []).some((l) => /github\.com.*EMERAULD/i.test(l.url || ""));
+          if (wasGh || /^(Vault|Index|Areas)$/i.test(it.text || "")) {
+            it.text =
+              it.id === "em_2" || /Index/i.test(it.text || "")
+                ? "Hubs — PHAROS, Writing, Research MOCs and Home"
+                : "Knowledge graph — wikilinks across the vault (Obsidian-style)";
+            it.url = "files/emerauld-graph.html";
+            it.kind = "LINK";
+            it.tag = /Hubs/i.test(it.text) ? "hubs" : "graph";
+            it.tagKind = /graph/i.test(it.tag) ? "c-ok" : "";
+            it.links = [
+              {
+                label: /Hubs/i.test(it.text) ? "Explore" : "Open graph",
+                url: "files/emerauld-graph.html",
+              },
+            ];
+            remapped = true;
+          }
+        }
+        // Drop pure GitHub-only third row if still present
+        const before = (b.items || []).length;
+        b.items = (b.items || []).filter(
+          (it) => !/github\.com.*EMERAULD\/tree/i.test(it.url || "")
+        );
+        if ((b.items || []).length !== before) remapped = true;
+      }
     }
     const links = linksBlock(state);
     for (const l of links.items || []) {
       if (l.label === "Papers hub" || l.label === "Method hub") {
         l.label = "Papers";
+        remapped = true;
+      }
+      if (l.label === "EMERAULD" && /github\.com.*EMERAULD/i.test(l.url || "")) {
+        l.url = "files/emerauld-graph.html";
         remapped = true;
       }
     }

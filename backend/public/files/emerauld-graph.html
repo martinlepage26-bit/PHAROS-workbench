@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EMERAULD — Knowledge graph</title>
+  <meta name="description" content="Obsidian-style wikilink graph of the EMERAULD vault.">
+  <meta name="theme-color" content="#0f0e12">
+  <script src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"
+    integrity="sha384-Ux6phic9PEHJ38YtrijhkzyJ8yQlH8i/+buBR8s3mAZOJrP1gwyvAcIYl3GWtpX1"
+    crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #0f0e12;
+      --panel: #17151c;
+      --panel-2: #1e1b24;
+      --ink: #f0ece6;
+      --soft: #b8b1a8;
+      --faint: #8b847b;
+      --line: #2e2a33;
+      --accent: #c4b5fd;
+      --accent-strong: #8b5cf6;
+      --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+    header {
+      flex-shrink: 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 10px 18px;
+      padding: 14px 18px 12px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #1a1720 0%, var(--bg) 100%);
+    }
+    .back {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.88rem;
+    }
+    .back:hover { text-decoration: underline; text-underline-offset: 2px; }
+    .brand { flex: 1; min-width: 180px; }
+    .brand h1 {
+      font-family: var(--serif);
+      font-size: 1.35rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+    .brand p { color: var(--soft); font-size: 0.88rem; margin-top: 3px; }
+    .tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    #search {
+      width: min(260px, 70vw);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      color: var(--ink);
+      border-radius: 10px;
+      padding: 8px 11px;
+      font: inherit;
+    }
+    #search:focus {
+      outline: none;
+      border-color: var(--accent-strong);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+    }
+    .stat {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--faint);
+      white-space: nowrap;
+    }
+    .layout {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 1fr minmax(220px, 280px);
+    }
+    @media (max-width: 760px) {
+      .layout { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+      aside { max-height: 38vh; border-left: none; border-top: 1px solid var(--line); }
+    }
+    #graph {
+      min-height: 0;
+      background:
+        radial-gradient(900px 500px at 20% 10%, rgba(109, 40, 217, 0.12) 0%, transparent 55%),
+        radial-gradient(700px 400px at 90% 80%, rgba(15, 122, 82, 0.08) 0%, transparent 50%),
+        var(--bg);
+    }
+    aside {
+      border-left: 1px solid var(--line);
+      background: var(--panel);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .panel {
+      padding: 14px 14px 10px;
+      border-bottom: 1px solid var(--line);
+    }
+    .panel h2 {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--faint);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    #info { color: var(--soft); font-size: 0.9rem; min-height: 4.5rem; }
+    #info .title {
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      line-height: 1.25;
+    }
+    #info .meta { font-family: var(--mono); font-size: 0.72rem; color: var(--faint); margin-bottom: 6px; }
+    #info .empty { color: var(--faint); font-style: italic; }
+    #neighbors {
+      flex: 1;
+      overflow: auto;
+      padding: 10px 14px 14px;
+    }
+    #neighbors h2 {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin-bottom: 8px;
+    }
+    .n-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      border: none;
+      border-left: 2px solid var(--line);
+      color: var(--soft);
+      padding: 5px 8px;
+      margin: 0 0 3px;
+      border-radius: 0 6px 6px 0;
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.84rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .n-item:hover { background: var(--panel-2); color: var(--ink); }
+    #legend {
+      padding: 12px 14px 16px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+    }
+    .leg {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--soft);
+      cursor: pointer;
+      user-select: none;
+    }
+    .leg.dim { opacity: 0.35; }
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    #status {
+      position: absolute;
+      left: 18px;
+      bottom: 14px;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--faint);
+      pointer-events: none;
+    }
+    .graph-wrap { position: relative; min-height: 0; }
+    #err {
+      padding: 24px;
+      color: #fb7185;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <a class="back" href="/">← Board</a>
+    </div>
+    <div class="brand">
+      <h1>EMERAULD</h1>
+      <p>Wikilink knowledge graph — Obsidian-style view of the vault</p>
+    </div>
+    <div class="tools">
+      <input id="search" type="search" placeholder="Find a note…" autocomplete="off">
+      <span class="stat" id="stats">…</span>
+    </div>
+  </header>
+  <div class="layout">
+    <div class="graph-wrap">
+      <div id="graph"></div>
+      <div id="status">Drag · scroll to zoom · click a node</div>
+      <div id="err"></div>
+    </div>
+    <aside>
+      <div class="panel">
+        <h2>Note</h2>
+        <div id="info"><span class="empty">Click a node — neighbors appear below.</span></div>
+      </div>
+      <div id="neighbors"></div>
+      <div id="legend"></div>
+    </aside>
+  </div>
+  <script>
+(async function () {
+  const $ = (id) => document.getElementById(id);
+  const err = $("err");
+  const info = $("info");
+  const neighborsEl = $("neighbors");
+  const legendEl = $("legend");
+  const statsEl = $("stats");
+  const statusEl = $("status");
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  let data;
+  try {
+    const res = await fetch("emerauld-graph-data.json", { cache: "no-cache" });
+    if (!res.ok) throw new Error("Could not load graph data (" + res.status + ")");
+    data = await res.json();
+  } catch (e) {
+    err.style.display = "block";
+    err.textContent = e.message || String(e);
+    return;
+  }
+
+  if (typeof vis === "undefined") {
+    err.style.display = "block";
+    err.textContent = "Graph library failed to load. Check network / CDN.";
+    return;
+  }
+
+  const areaOn = {};
+  Object.keys(data.areas || {}).forEach((a) => { areaOn[a] = true; });
+
+  const nodeById = {};
+  data.nodes.forEach((n) => { nodeById[n.id] = n; });
+
+  // adjacency for neighbors panel
+  const adj = {};
+  data.edges.forEach((e) => {
+    if (!adj[e.source]) adj[e.source] = [];
+    if (!adj[e.target]) adj[e.target] = [];
+    adj[e.source].push(e.target);
+    adj[e.target].push(e.source);
+  });
+
+  function nodeVis(n) {
+    return {
+      id: n.id,
+      label: n.label,
+      title: n.title + (n.path ? "\n" + n.path : ""),
+      size: n.size,
+      color: {
+        background: n.color,
+        border: n.color,
+        highlight: { background: "#ffffff", border: n.color },
+        hover: { background: n.color, border: "#ffffff" },
+      },
+      font: { color: "#f0ece6", size: 11, face: "Inter, system-ui, sans-serif" },
+      borderWidth: 1.5,
+      area: n.area,
+    };
+  }
+
+  const nodesDS = new vis.DataSet(data.nodes.map(nodeVis));
+  const edgesDS = new vis.DataSet(
+    data.edges.map((e, i) => ({
+      id: "e" + i,
+      from: e.source,
+      to: e.target,
+      width: Math.min(3, 0.4 + (e.weight || 1) * 0.15),
+      color: { color: "rgba(196, 181, 253, 0.22)", highlight: "rgba(196, 181, 253, 0.7)" },
+      smooth: { type: "continuous", roundness: 0.15 },
+    }))
+  );
+
+  const network = new vis.Network(
+    $("graph"),
+    { nodes: nodesDS, edges: edgesDS },
+    {
+      physics: {
+        solver: "forceAtlas2Based",
+        forceAtlas2Based: {
+          gravitationalConstant: -38,
+          centralGravity: 0.012,
+          springLength: 95,
+          springConstant: 0.06,
+          damping: 0.45,
+          avoidOverlap: 0.35,
+        },
+        stabilization: { iterations: 180, updateInterval: 25 },
+      },
+      interaction: {
+        hover: true,
+        tooltipDelay: 120,
+        hideEdgesOnDrag: true,
+        multiselect: false,
+      },
+      nodes: {
+        shape: "dot",
+        scaling: { min: 6, max: 32 },
+      },
+      edges: {
+        selectionWidth: 2,
+      },
+    }
+  );
+
+  statsEl.textContent =
+    data.node_count + " notes · " + data.edge_count + " links (pruned vault graph)";
+
+  network.once("stabilizationIterationsDone", () => {
+    network.setOptions({ physics: { enabled: false } });
+    statusEl.textContent = "Physics settled — drag freely";
+  });
+
+  function showInfo(id) {
+    const n = nodeById[id];
+    if (!n) {
+      info.innerHTML = '<span class="empty">Unknown node</span>';
+      neighborsEl.innerHTML = "";
+      return;
+    }
+    info.innerHTML =
+      '<div class="title">' + esc(n.title) + "</div>" +
+      '<div class="meta">' + esc(n.area) + " · " + esc(n.type) +
+      " · degree " + esc(n.degree) +
+      (n.backlinks ? " · " + esc(n.backlinks) + " backlinks" : "") +
+      "</div>" +
+      (n.path ? '<div class="meta">' + esc(n.path) + "</div>" : "");
+
+    const neigh = (adj[id] || []).slice();
+    // unique preserve order
+    const seen = new Set();
+    const uniq = [];
+    for (const x of neigh) {
+      if (seen.has(x)) continue;
+      seen.add(x);
+      uniq.push(x);
+    }
+    uniq.sort((a, b) => (nodeById[b]?.degree || 0) - (nodeById[a]?.degree || 0));
+
+    let html = "<h2>Connected (" + uniq.length + ")</h2>";
+    if (!uniq.length) {
+      html += '<p class="empty" style="color:var(--faint);font-style:italic">No neighbors in this pruned view.</p>';
+    } else {
+      for (const nid of uniq.slice(0, 40)) {
+        const nn = nodeById[nid];
+        const label = nn ? nn.label : nid;
+        const col = nn ? nn.color : "#78716c";
+        html +=
+          '<button type="button" class="n-item" data-id="' +
+          esc(nid) +
+          '" style="border-left-color:' +
+          esc(col) +
+          '">' +
+          esc(label) +
+          "</button>";
+      }
+    }
+    neighborsEl.innerHTML = html;
+    neighborsEl.querySelectorAll(".n-item").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const nid = btn.getAttribute("data-id");
+        network.selectNodes([nid]);
+        network.focus(nid, { scale: 1.15, animation: { duration: 400, easingFunction: "easeInOutQuad" } });
+        showInfo(nid);
+      });
+    });
+  }
+
+  network.on("click", (params) => {
+    if (params.nodes && params.nodes[0]) showInfo(params.nodes[0]);
+  });
+
+  // Legend filters
+  const areas = data.areas || {};
+  Object.keys(areas).forEach((area) => {
+    const count = data.nodes.filter((n) => n.area === area).length;
+    if (!count) return;
+    const el = document.createElement("label");
+    el.className = "leg";
+    el.innerHTML =
+      '<span class="dot" style="background:' +
+      esc(areas[area]) +
+      '"></span>' +
+      esc(area) +
+      " · " +
+      count;
+    el.addEventListener("click", () => {
+      areaOn[area] = !areaOn[area];
+      el.classList.toggle("dim", !areaOn[area]);
+      applyAreaFilter();
+    });
+    legendEl.appendChild(el);
+  });
+
+  function applyAreaFilter() {
+    const updates = data.nodes.map((n) => ({
+      id: n.id,
+      hidden: !areaOn[n.area],
+    }));
+    nodesDS.update(updates);
+  }
+
+  // Search
+  const search = $("search");
+  let searchTimer = null;
+  search.addEventListener("input", () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      const q = search.value.trim().toLowerCase();
+      if (!q) return;
+      const hit = data.nodes.find(
+        (n) =>
+          n.title.toLowerCase().includes(q) ||
+          n.label.toLowerCase().includes(q) ||
+          (n.path && n.path.toLowerCase().includes(q))
+      );
+      if (hit && areaOn[hit.area] !== false) {
+        network.selectNodes([hit.id]);
+        network.focus(hit.id, {
+          scale: 1.2,
+          animation: { duration: 450, easingFunction: "easeInOutQuad" },
+        });
+        showInfo(hit.id);
+      }
+    }, 180);
+  });
+})();
+  </script>
+</body>
+</html>
