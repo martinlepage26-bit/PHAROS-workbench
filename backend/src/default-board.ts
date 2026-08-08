@@ -51,7 +51,7 @@ export function buildDefaultBoard(now = new Date()): BoardV3 {
           {
             id: id("l", 6),
             label: "EMERAULD",
-            url: "files/emerauld-graph.html",
+            url: "files/emerauld-graph",
           },
         ],
       },
@@ -173,7 +173,7 @@ export function buildDefaultBoard(now = new Date()): BoardV3 {
         style: "normal",
         empty: "None yet.",
         linkLabel: "Open graph",
-        linkUrl: "files/emerauld-graph.html",
+        linkUrl: "files/emerauld-graph",
         items: [
           {
             id: id("em", 1),
@@ -183,11 +183,11 @@ export function buildDefaultBoard(now = new Date()): BoardV3 {
             tag: "graph",
             tagKind: "c-ok",
             kind: "LINK",
-            url: "files/emerauld-graph.html",
+            url: "files/emerauld-graph",
             links: [
               {
                 label: "Open graph",
-                url: "files/emerauld-graph.html",
+                url: "files/emerauld-graph",
               },
             ],
           },
@@ -199,11 +199,11 @@ export function buildDefaultBoard(now = new Date()): BoardV3 {
             tag: "hubs",
             tagKind: "",
             kind: "LINK",
-            url: "files/emerauld-graph.html",
+            url: "files/emerauld-graph",
             links: [
               {
                 label: "Explore",
-                url: "files/emerauld-graph.html",
+                url: "files/emerauld-graph",
               },
             ],
           },

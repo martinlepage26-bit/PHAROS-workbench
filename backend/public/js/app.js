@@ -462,7 +462,7 @@ async function bootstrap() {
       // EMERAULD: graph view replaces GitHub vault links
       if (b.id === "sec_emerauld") {
         if (/github\.com.*EMERAULD/i.test(b.linkUrl || "")) {
-          b.linkUrl = "files/emerauld-graph.html";
+          b.linkUrl = "files/emerauld-graph";
           b.linkLabel = "Open graph";
           remapped = true;
         }
@@ -475,14 +475,14 @@ async function bootstrap() {
               it.id === "em_2" || /Index/i.test(it.text || "")
                 ? "Hubs — PHAROS, Writing, Research MOCs and Home"
                 : "Knowledge graph — wikilinks across the vault (Obsidian-style)";
-            it.url = "files/emerauld-graph.html";
+            it.url = "files/emerauld-graph";
             it.kind = "LINK";
             it.tag = /Hubs/i.test(it.text) ? "hubs" : "graph";
             it.tagKind = /graph/i.test(it.tag) ? "c-ok" : "";
             it.links = [
               {
                 label: /Hubs/i.test(it.text) ? "Explore" : "Open graph",
-                url: "files/emerauld-graph.html",
+                url: "files/emerauld-graph",
               },
             ];
             remapped = true;
@@ -503,7 +503,7 @@ async function bootstrap() {
         remapped = true;
       }
       if (l.label === "EMERAULD" && /github\.com.*EMERAULD/i.test(l.url || "")) {
-        l.url = "files/emerauld-graph.html";
+        l.url = "files/emerauld-graph";
         remapped = true;
       }
     }
@@ -741,4 +741,5 @@ $("import-file")?.addEventListener("change", (e) => {
 
 paint();
 bootstrap();
+
 
