@@ -20,8 +20,15 @@ In practical terms:
 
 The separate official **3D Graph** community plugin is different: it uses **D3.js** for rendering.
 
-## Workbench implication
+## Workbench implementation
 
-Current EMERAULD workbench graph (`/files/emerauld-graph`) uses **vis-network** (canvas/WebGL-capable) over a pruned wikilink graph — same data model (notes = nodes, `[[wikilinks]]` = edges), not Obsidian’s PixiJS runtime.
+EMERAULD workbench graph (`/files/emerauld-graph`) now follows the same practical stack as Obsidian’s built-in view:
 
-To approach Obsidian-class performance at full vault scale: PixiJS (or raw WebGL) + custom force layout + progressive/filtered node sets, not D3 as the primary renderer.
+| Piece | Workbench |
+| --- | --- |
+| **Renderer** | PixiJS v7 (CDN), WebGL |
+| **Layout** | Custom force-directed sim in `emerauld-graph-app.js` (repulsion + springs + center) |
+| **Data model** | Pruned wikilink graph from EMERAULD `.graph_store` (`scripts/build-emerauld-graph.mjs`) |
+| **Not used** | D3.js as primary renderer; vis-network (retired) |
+
+Still not Obsidian’s closed-source bundle — same *kind* of architecture, our own layout and UI (navy / mauve constellation).

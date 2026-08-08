@@ -169,10 +169,14 @@ header {
     linear-gradient(165deg, #12182c 0%, #0b1020 42%, #0a0e1c 100%);
 }
 
-#graph .vis-network,
 #graph canvas {
+  display: block;
   width: 100% !important;
   height: 100% !important;
+  cursor: grab;
+}
+#graph canvas:active {
+  cursor: grabbing;
 }
 
 aside {

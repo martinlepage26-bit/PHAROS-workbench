@@ -4,12 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>EMERAULD — Knowledge graph</title>
-  <meta name="description" content="Bright wikilink graph of the EMERAULD vault.">
+  <meta name="description" content="PixiJS / WebGL wikilink graph of the EMERAULD vault.">
   <meta name="theme-color" content="#0b1020">
   <link rel="stylesheet" href="/css/emerauld-graph.css">
-  <script src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"
-    integrity="sha384-Ux6phic9PEHJ38YtrijhkzyJ8yQlH8i/+buBR8s3mAZOJrP1gwyvAcIYl3GWtpX1"
-    crossorigin="anonymous"></script>
+  <!-- PixiJS v7 UMD — WebGL renderer (Obsidian Graph View also uses PixiJS) -->
+  <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.js"></script>
 </head>
 <body>
   <header>
@@ -18,7 +17,7 @@
     </div>
     <div class="brand">
       <h1>EMERAULD</h1>
-      <p>Vault constellation — bright map of linked notes</p>
+      <p>Vault constellation — PixiJS · WebGL · custom force</p>
     </div>
     <div class="tools">
       <input id="search" type="search" placeholder="Find a note…" autocomplete="off">
@@ -28,7 +27,7 @@
   <div class="layout">
     <div class="graph-wrap">
       <div id="graph"></div>
-      <div id="status">Drag · scroll to zoom · click a node</div>
+      <div id="status">Settling…</div>
       <div id="err"></div>
     </div>
     <aside>
