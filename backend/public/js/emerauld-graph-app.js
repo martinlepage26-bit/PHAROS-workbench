@@ -190,22 +190,24 @@
     applyCamera();
   }
 
-  // ── force simulation (custom) ──────────────────────────────
-  let cooling = 1;
+  // ── force simulation (custom) — slow settle ────────────────
+  let cooling = 0.85;
   let ticking = true;
   let tickCount = 0;
-  const MAX_TICKS = 420;
+  const MAX_TICKS = 1400;
+  const COOLING_DECAY = 0.9975; // was 0.992 — much slower cool-down
+  const STOP_COOLING = 0.012;
 
   function stepForce() {
     if (!ticking) return;
     tickCount++;
     const alpha = cooling;
     const n = nodes.length;
-    const repulsion = 1800 * alpha;
-    const springK = 0.045 * alpha;
-    const springLen = 72;
-    const centerK = 0.012 * alpha;
-    const damp = 0.82;
+    const repulsion = 1100 * alpha;
+    const springK = 0.028 * alpha;
+    const springLen = 78;
+    const centerK = 0.008 * alpha;
+    const damp = 0.9; // higher damp = smoother, slower motion
 
     // pairwise repulsion (OK at ~300 nodes for settle phase)
     for (let i = 0; i < n; i++) {
@@ -264,8 +266,8 @@
       a.y += a.vy;
     }
 
-    cooling *= 0.992;
-    if (tickCount >= MAX_TICKS || cooling < 0.02) {
+    cooling *= COOLING_DECAY;
+    if (tickCount >= MAX_TICKS || cooling < STOP_COOLING) {
       ticking = false;
       cooling = 0;
       fitView();
@@ -491,8 +493,8 @@
       // warm sim slightly when user moves a node
       if (!ticking) {
         ticking = true;
-        cooling = Math.max(cooling, 0.15);
-        tickCount = Math.min(tickCount, MAX_TICKS - 40);
+        cooling = Math.max(cooling, 0.2);
+        tickCount = Math.min(tickCount, MAX_TICKS - 120);
         statusEl.textContent = "Settling…";
       }
       draw();
@@ -557,7 +559,7 @@
     }
     if (!ticking) {
       ticking = true;
-      cooling = 0.25;
+      cooling = 0.35;
       tickCount = 0;
     }
     draw();
@@ -584,12 +586,11 @@
   });
 
   // ── main loop ──────────────────────────────────────────────
-  statusEl.textContent = "Settling force layout…";
+  statusEl.textContent = "Settling slowly…";
   app.ticker.add(() => {
     if (ticking) {
-      // multiple substeps early for faster settle
-      const steps = tickCount < 80 ? 2 : 1;
-      for (let s = 0; s < steps; s++) stepForce();
+      // one step per frame — calm, watchable settle
+      stepForce();
     }
     draw();
   });
