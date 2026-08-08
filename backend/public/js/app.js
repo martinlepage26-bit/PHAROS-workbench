@@ -419,9 +419,32 @@ async function bootstrap() {
       }
     }
     const pipe = pipelineBlock(state);
-    if (pipe && /Paper Series|Paper writing|Pharos Paper/i.test(pipe.title || "")) {
-      pipe.title = "Paper path";
+    if (
+      pipe &&
+      /Paper Series|Paper writing|Pharos Paper|Paper path/i.test(pipe.title || "")
+    ) {
+      pipe.title = "Writing path";
       remapped = true;
+    }
+    if (pipe && Array.isArray(pipe.stages)) {
+      const stageMap = {
+        "Project Control": "Control",
+        "Raw Materials": "Materials",
+        "Source Field": "Sources",
+        Deconstruction: "Cut",
+        "Outline And Abstract": "Outline",
+        "Outline and Abstract": "Outline",
+        "Research Bundle": "Research",
+        "Section Drafts": "Drafts",
+        Validation: "Check",
+        "Final Outputs": "Final",
+      };
+      for (const s of pipe.stages) {
+        if (stageMap[s.label]) {
+          s.label = stageMap[s.label];
+          remapped = true;
+        }
+      }
     }
     // Quiet list titles (migrate old wording only)
     for (const b of listBlocks(state)) {

@@ -56,34 +56,38 @@ function renderPipeline(block) {
   if (!stages.length) {
     return `<div class="empty">No steps yet.</div>
       <div class="card-foot">
+        <a class="btn sm" href="files-hub.html">Papers</a>
+        <a class="btn sm" href="files/paper-register.html">Register</a>
         <button class="btn sm" type="button" data-action="pipe.add">Add step</button>
       </div>`;
   }
   return (
-    `<div class="pipeline">` +
+    `<p class="pipe-lede">Drive folders for one paper — open a station to work.</p>
+    <div class="pipeline" role="list">` +
     stages
       .map((p, i) => {
         const body = `
-        <a class="pipe-step" href="${esc(p.url || "#")}" ${
+        <a class="pipe-step" role="listitem" href="${esc(p.url || "#")}" ${
           p.url ? 'target="_blank" rel="noopener"' : 'onclick="return false"'
         }>
           <strong>${esc(p.code || "·")}</strong>
           <span>${esc(p.label || "Step")}</span>
         </a>
-        <div class="row-actions" style="margin-top:4px;justify-content:center">
+        <div class="pipe-tools row-actions">
           <button class="btn sm icon" type="button" data-action="pipe.edit" data-id="${esc(p.id)}" title="Edit">✎</button>
           <button class="btn sm icon" type="button" data-action="pipe.move" data-id="${esc(p.id)}" data-dir="-1" ${i === 0 ? "disabled" : ""} title="Move left">‹</button>
           <button class="btn sm icon" type="button" data-action="pipe.move" data-id="${esc(p.id)}" data-dir="1" ${i === stages.length - 1 ? "disabled" : ""} title="Move right">›</button>
           <button class="btn sm icon danger" type="button" data-action="pipe.delete" data-id="${esc(p.id)}" title="Remove">×</button>
         </div>`;
-        return `<div class="pipe-cell" style="flex:1 1 88px;min-width:84px">${body}</div>${
-          i < stages.length - 1 ? '<div class="pipe-arrow" aria-hidden="true">→</div>' : ""
-        }`;
+        return `<div class="pipe-cell">${body}</div>`;
       })
       .join("") +
     `</div>
-    <div class="card-foot">
-      <button class="btn sm" type="button" data-action="pipe.add">Add step</button>
+    <div class="card-foot pipe-foot">
+      <a class="btn sm primary" href="files-hub.html">Papers</a>
+      <a class="btn sm" href="files/paper-register.html">Register</a>
+      <a class="btn sm" href="files/corpus-full-list.html">Corpus</a>
+      <button class="btn sm ghost" type="button" data-action="pipe.add">Add step</button>
     </div>`
   );
 }
@@ -179,7 +183,7 @@ export function renderBoard(state, _onMeta) {
   let html = `
     <div class="card full">
       <div class="card-head">
-        <h2 class="sec-title">${esc(pipe.title || "Paper path")}</h2>
+        <h2 class="sec-title">${esc(pipe.title || "Writing path")}</h2>
         <span class="count">${(pipe.stages || []).length}</span>
       </div>
       ${renderPipeline(pipe)}
