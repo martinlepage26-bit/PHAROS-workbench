@@ -191,3 +191,4 @@ export function renderBoard(state, _onMeta) {
 
   board.innerHTML = html;
 }
+
