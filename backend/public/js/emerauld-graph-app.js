@@ -46,18 +46,17 @@
     adj[e.target].push(e.source);
   });
 
-  // Small shining gold nodes — size by degree, same metal family
-  function goldFor(n) {
+  // Small shining mauve nodes on navy — brighter for hubs
+  function mauveFor(n) {
     const d = Math.min(n.degree || 1, 800);
     const t = Math.log10(d + 1) / Math.log10(801); // 0..1
-    // brighter core for higher degree
-    const bg = t > 0.55 ? "#f5d76e" : t > 0.3 ? "#e8bc3a" : "#d4a017";
-    const border = t > 0.55 ? "#fff3c4" : "#f0c14b";
-    return { bg, border };
+    const bg = t > 0.55 ? "#e8d0f5" : t > 0.3 ? "#d4b4e8" : "#c4a4d4";
+    const border = t > 0.55 ? "#f6ecff" : "#e0c4f0";
+    return { bg, border, glow: t > 0.55 ? "rgba(232, 208, 245, 0.65)" : "rgba(196, 164, 212, 0.45)" };
   }
 
   function nodeVis(n) {
-    const g = goldFor(n);
+    const g = mauveFor(n);
     const size = Math.max(4.5, Math.min(14, 4.2 + Math.pow(Math.min(n.degree || 1, 400), 0.28) * 1.6));
     return {
       id: n.id,
@@ -67,22 +66,22 @@
       color: {
         background: g.bg,
         border: g.border,
-        highlight: { background: "#fff8dc", border: "#ffffff" },
-        hover: { background: "#ffe566", border: "#ffffff" },
+        highlight: { background: "#f6ecff", border: "#ffffff" },
+        hover: { background: "#edd8fa", border: "#ffffff" },
       },
       font: {
-        color: "rgba(26, 24, 20, 0.72)",
+        color: "rgba(240, 238, 248, 0.88)",
         size: 10,
         face: "Inter, system-ui, sans-serif",
         strokeWidth: 3,
-        strokeColor: "rgba(255, 255, 255, 0.92)",
+        strokeColor: "rgba(11, 16, 32, 0.75)",
       },
-      borderWidth: 1.8,
-      borderWidthSelected: 2.5,
+      borderWidth: 1.6,
+      borderWidthSelected: 2.4,
       shadow: {
         enabled: true,
-        color: "rgba(240, 193, 75, 0.55)",
-        size: 12,
+        color: g.glow,
+        size: 14,
         x: 0,
         y: 0,
       },
@@ -98,10 +97,10 @@
       to: e.target,
       width: Math.min(1.6, 0.25 + (e.weight || 1) * 0.06),
       color: {
-        color: "rgba(184, 134, 11, 0.14)",
-        highlight: "rgba(212, 160, 23, 0.55)",
-        hover: "rgba(212, 160, 23, 0.35)",
-        opacity: 0.85,
+        color: "rgba(180, 150, 210, 0.16)",
+        highlight: "rgba(224, 196, 240, 0.55)",
+        hover: "rgba(196, 164, 212, 0.35)",
+        opacity: 0.9,
       },
       smooth: { type: "continuous", roundness: 0.22 },
     }))
@@ -140,9 +139,9 @@
         chosen: {
           node: function (values) {
             values.shadow = true;
-            values.shadowColor = "rgba(255, 230, 120, 0.9)";
+            values.shadowColor = "rgba(232, 208, 245, 0.85)";
             values.shadowSize = 22;
-            values.borderWidth = 2.8;
+            values.borderWidth = 2.6;
           },
           label: true,
         },
