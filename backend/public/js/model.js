@@ -108,7 +108,7 @@ export function emptyBoard() {
       {
         type: "pipeline",
         id: "pipeline",
-        title: "Drive — Pharos Paper Series OS pipeline",
+        title: "Paper path",
         stages: [],
       },
     ],
@@ -149,7 +149,7 @@ export function normalizeBoard(raw) {
   blocks.push({
     type: "pipeline",
     id: "pipeline",
-    title: "Drive — Pharos Paper Series OS pipeline",
+    title: "Paper path",
     stages: (data.pipeline || []).map((s) => ({
       id: s.id || uid("pipe"),
       code: s.code || "",
@@ -310,7 +310,7 @@ export function ensureCoreBlocks(state) {
     state.blocks.splice(1, 0, {
       type: "pipeline",
       id: "pipeline",
-      title: "Drive — Pharos Paper Series OS pipeline",
+      title: "Paper path",
       stages: [],
     });
   }

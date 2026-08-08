@@ -44,9 +44,14 @@ Legacy `{ links, pipeline, sections }` is upgraded on read/write.
 - **No** `?key=` query auth
 - CORS only for origins in `CORS_ORIGINS`
 
+Sign in from the board UI (paste key → Continue), or:
+
 ```bash
 KEY=$(cat ~/.secrets/pharos-workbench-api-key.txt)
-xdg-open "https://pharos-workbench-api.martinlepage26.workers.dev/api/session/bootstrap?key=$KEY"
+curl -sS -c cookies.txt -H 'Content-Type: application/json' \
+  -d "{\"key\":\"$KEY\"}" \
+  https://pharos-workbench-api.martinlepage26.workers.dev/api/session/login
+# Do not put the key in a URL query string (logs / history).
 ```
 
 ## Commands

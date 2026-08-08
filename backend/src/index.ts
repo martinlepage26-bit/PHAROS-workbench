@@ -22,7 +22,7 @@ import {
   parseBoardData,
   writeBoard,
 } from "./board";
-import { toBoardV3 } from "./schema";
+import { CONTENT_REVISION, rawContentRevision, toBoardV3 } from "./schema";
 
 export interface Env extends AuthEnv {
   DB: D1Database;
@@ -112,25 +112,6 @@ export default {
         );
       }
 
-      if (path === "/api/session/bootstrap" && request.method === "GET") {
-        const key = url.searchParams.get("key") || "";
-        if (!key || !timingSafeEqualStr(key, env.WORKBENCH_API_KEY)) {
-          return json(env, request, { error: "invalid_key" }, 401);
-        }
-        const exp = Math.floor(Date.now() / 1000) + SESSION_TTL_SEC;
-        const token = await signSession(env.WORKBENCH_API_KEY, boardId, exp);
-        const dest = new URL("/", url.origin);
-        dest.searchParams.set("session", "ok");
-        return new Response(null, {
-          status: 302,
-          headers: {
-            Location: dest.toString(),
-            "Set-Cookie": sessionCookie(token),
-            "Cache-Control": "no-store",
-          },
-        });
-      }
-
       if (
         path === "/api/session/logout" &&
         (request.method === "POST" || request.method === "GET")
@@ -150,6 +131,19 @@ export default {
         });
       }
 
+      // Removed: GET ?key= bootstrap (leaks secrets via logs / history / Referer)
+      if (path === "/api/session/bootstrap") {
+        return json(
+          env,
+          request,
+          {
+            error: "gone",
+            hint: "Use POST /api/session/login with JSON body { key }",
+          },
+          410
+        );
+      }
+
       // ── Board API (auth required) ──────────────────────────────
       if (path.startsWith("/api/")) {
         if (!(await authorize(request, env))) {
@@ -158,7 +152,7 @@ export default {
             request,
             {
               error: "unauthorized",
-              hint: "POST /api/session/login or open /api/session/bootstrap once",
+              hint: "POST /api/session/login with your access key",
             },
             401
           );
@@ -183,22 +177,48 @@ export default {
             { ETag: 'W/"0"', "X-Board-Revision": "0" }
           );
         }
-        const data = parseBoardData(row) || defaultBoardData();
+        let revision = row.revision;
+        let updated_at = row.updated_at;
+        let updated_by = row.updated_by;
+        let storedRev = 0;
+        try {
+          storedRev = rawContentRevision(JSON.parse(row.data));
+        } catch {
+          storedRev = 0;
+        }
+        let data = parseBoardData(row) || defaultBoardData();
+        // Persist server content migrations once (no client remap)
+        if (storedRev < CONTENT_REVISION) {
+          try {
+            const result = await writeBoard(env.DB, boardId, data, {
+              expectedRevision: row.revision,
+              client: "content-migrate",
+            });
+            if (result.ok) {
+              revision = result.revision;
+              updated_at = result.updated_at;
+              updated_by = "content-migrate";
+              data = toBoardV3(data);
+            }
+          } catch {
+            /* return migrated view even if persist fails */
+          }
+        }
         return json(
           env,
           request,
           {
             board_id: row.id,
-            revision: row.revision,
-            updated_at: row.updated_at,
-            updated_by: row.updated_by,
+            revision,
+            updated_at,
+            updated_by,
             exists: true,
             data,
           },
           200,
           {
-            ETag: `W/"${row.revision}"`,
-            "X-Board-Revision": String(row.revision),
+            ETag: `W/"${revision}"`,
+            "X-Board-Revision": String(revision),
           }
         );
       }

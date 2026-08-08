@@ -391,128 +391,13 @@ async function bootstrap() {
     }
     $("session-banner")?.classList.remove("show");
     const body = await api.loadBoard();
+    // Server owns content migrations (meta.content_revision) + v3 upgrade.
     state = ensureCoreBlocks(normalizeBoard(body.data));
-    let remapped = false;
-    if (state.meta) {
-      if (
-        !state.meta.title ||
-        /Workbench|D1|HttpOnly|Cloudflare/i.test(state.meta.title)
-      ) {
-        state.meta.title = "Pharos";
-        remapped = true;
-      }
-      if (
-        !state.meta.subtitle ||
-        /Tasks ·|local persistence|D1|OPERATIONAL/i.test(state.meta.subtitle)
-      ) {
-        state.meta.subtitle = "What needs you";
-        remapped = true;
-      }
-      if (
-        !state.meta.footer ||
-        /OPERATIONAL|server-owned|Cloudflare|Changes save automatically/i.test(
-          state.meta.footer
-        )
-      ) {
-        state.meta.footer = "Saves when you’re signed in.";
-        remapped = true;
-      }
-    }
-    const pipe = pipelineBlock(state);
-    if (pipe && /Paper Series|Paper writing|Pharos Paper/i.test(pipe.title || "")) {
-      pipe.title = "Paper path";
-      remapped = true;
-    }
-    // Quiet list titles (migrate old wording only)
-    for (const b of listBlocks(state)) {
-      const map = {
-        "Needs attention": "Needs you",
-        "Mail to handle": "Mail",
-        "EMERAULD vault": "EMERAULD",
-        "Paper writing steps": "Paper path",
-      };
-      if (map[b.title]) {
-        b.title = map[b.title];
-        remapped = true;
-      }
-      if (b.id === "sec_cal" && /No meetings or deadlines|No plans/i.test(b.empty || "")) {
-        b.empty = "Clear.";
-        remapped = true;
-      }
-      if (b.id === "sec_granola" && /No meeting notes/i.test(b.empty || "")) {
-        b.empty = "None yet.";
-        remapped = true;
-      }
-      if (b.id === "sec_actions" && /Nothing urgent/i.test(b.empty || "")) {
-        b.empty = "Clear.";
-        remapped = true;
-      }
-      if (b.id === "sec_mail" && /Inbox clear/i.test(b.empty || "")) {
-        b.empty = "Clear.";
-        remapped = true;
-      }
-      if (b.linkLabel && /Open Granola/i.test(b.linkLabel)) {
-        b.linkLabel = "Granola";
-        remapped = true;
-      }
-      if (b.linkLabel && /Open on GitHub/i.test(b.linkLabel)) {
-        b.linkLabel = "GitHub";
-        remapped = true;
-      }
-      // EMERAULD: graph view replaces GitHub vault links
-      if (b.id === "sec_emerauld") {
-        if (/github\.com.*EMERAULD/i.test(b.linkUrl || "")) {
-          b.linkUrl = "files/emerauld-graph";
-          b.linkLabel = "Open graph";
-          remapped = true;
-        }
-        for (const it of b.items || []) {
-          const wasGh =
-            /github\.com.*EMERAULD/i.test(it.url || "") ||
-            (it.links || []).some((l) => /github\.com.*EMERAULD/i.test(l.url || ""));
-          if (wasGh || /^(Vault|Index|Areas)$/i.test(it.text || "")) {
-            it.text =
-              it.id === "em_2" || /Index/i.test(it.text || "")
-                ? "Hubs — PHAROS, Writing, Research MOCs and Home"
-                : "Knowledge graph — wikilinks across the vault (Obsidian-style)";
-            it.url = "files/emerauld-graph";
-            it.kind = "LINK";
-            it.tag = /Hubs/i.test(it.text) ? "hubs" : "graph";
-            it.tagKind = /graph/i.test(it.tag) ? "c-ok" : "";
-            it.links = [
-              {
-                label: /Hubs/i.test(it.text) ? "Explore" : "Open graph",
-                url: "files/emerauld-graph",
-              },
-            ];
-            remapped = true;
-          }
-        }
-        // Drop pure GitHub-only third row if still present
-        const before = (b.items || []).length;
-        b.items = (b.items || []).filter(
-          (it) => !/github\.com.*EMERAULD\/tree/i.test(it.url || "")
-        );
-        if ((b.items || []).length !== before) remapped = true;
-      }
-    }
-    const links = linksBlock(state);
-    for (const l of links.items || []) {
-      if (l.label === "Papers hub" || l.label === "Method hub") {
-        l.label = "Papers";
-        remapped = true;
-      }
-      if (l.label === "EMERAULD" && /github\.com.*EMERAULD/i.test(l.url || "")) {
-        l.url = "files/emerauld-graph";
-        remapped = true;
-      }
-    }
     paint();
     cacheLocal();
     setStatus(body.exists ? "Saved" : "Ready", "ok");
-    if (body.exists && body.data && body.data.version !== 3) {
-      await syncNow(true);
-    } else if (!body.exists || remapped) {
+    // First-time board: persist default once
+    if (!body.exists) {
       await syncNow(true);
     }
   } catch (e) {

@@ -1,6 +1,6 @@
-/** Server-owned default board (v3 blocks). EMERAULD on Git — no Notion/Slack. */
+/** Server-owned default board (v3 blocks). EMERAULD graph on workbench — no Notion/Slack. */
 
-import type { BoardV3 } from "./schema";
+import { CONTENT_REVISION, type BoardV3 } from "./schema";
 
 function id(prefix: string, n: number): string {
   return `${prefix}_${n}`;
@@ -29,6 +29,7 @@ export function buildDefaultBoard(now = new Date()): BoardV3 {
       windowNewest,
       snap: "cloud",
       footer: "Saves when you’re signed in.",
+      content_revision: CONTENT_REVISION,
     },
     blocks: [
       {

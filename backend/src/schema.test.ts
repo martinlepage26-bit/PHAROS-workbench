@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  CONTENT_REVISION,
   findListItem,
   legacyToBlocks,
   listBlocksOf,
+  migrateBoardContent,
   moveInArray,
   toBoardV3,
 } from "./schema.ts";
@@ -101,6 +103,83 @@ describe("toBoardV3", () => {
     const lists = listBlocksOf(board);
     assert.equal(lists.length, 1);
     assert.equal(lists[0]!.id, "sec_emerauld");
+    // content migration renames EMERAULD · Git vault → EMERAULD
+    assert.equal(lists[0]!.title, "EMERAULD");
+    assert.equal(board.meta.content_revision, CONTENT_REVISION);
+  });
+
+  it("migrates EMERAULD GitHub links to local graph", () => {
+    const board = toBoardV3({
+      version: 3,
+      meta: { title: "Pharos · Workbench", content_revision: 0 },
+      blocks: [
+        {
+          type: "links",
+          id: "nav",
+          items: [
+            {
+              id: "l1",
+              label: "EMERAULD",
+              url: "https://github.com/martinlepage26-bit/EMERAULD",
+            },
+          ],
+        },
+        {
+          type: "pipeline",
+          id: "pipeline",
+          title: "Drive — Pharos Paper Series OS pipeline",
+          stages: [],
+        },
+        {
+          type: "list",
+          id: "sec_emerauld",
+          title: "EMERAULD vault",
+          layout: "full",
+          style: "normal",
+          empty: "",
+          linkLabel: "GitHub",
+          linkUrl: "https://github.com/martinlepage26-bit/EMERAULD",
+          items: [
+            {
+              id: "em_1",
+              time: "",
+              source: "",
+              text: "Vault",
+              tag: "",
+              tagKind: "",
+              kind: "LINK",
+              url: "https://github.com/martinlepage26-bit/EMERAULD",
+            },
+          ],
+        },
+      ],
+    });
+    assert.equal(board.meta.title, "Pharos");
+    assert.equal(board.meta.content_revision, CONTENT_REVISION);
+    const pipe = board.blocks.find((b) => b.type === "pipeline");
+    assert.ok(pipe && pipe.type === "pipeline");
+    assert.equal(pipe.title, "Paper path");
+    const links = board.blocks.find((b) => b.type === "links");
+    assert.ok(links && links.type === "links");
+    assert.equal(links.items[0]!.url, "files/emerauld-graph");
+    const em = listBlocksOf(board).find((l) => l.id === "sec_emerauld");
+    assert.ok(em);
+    assert.equal(em!.title, "EMERAULD");
+    assert.equal(em!.linkUrl, "files/emerauld-graph");
+    assert.equal(em!.items[0]!.url, "files/emerauld-graph");
+  });
+
+  it("migrateBoardContent is idempotent at current revision", () => {
+    const once = toBoardV3({
+      meta: { content_revision: 0 },
+      blocks: [
+        { type: "links", id: "nav", items: [] },
+        { type: "pipeline", id: "pipeline", title: "Paper path", stages: [] },
+      ],
+    });
+    const twice = migrateBoardContent(once);
+    assert.equal(twice.meta.content_revision, CONTENT_REVISION);
+    assert.equal(twice.meta.title, once.meta.title);
   });
 
   it("findListItem and moveInArray work", () => {
