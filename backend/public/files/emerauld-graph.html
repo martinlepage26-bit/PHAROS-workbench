@@ -25,7 +25,12 @@
       --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; }
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      width: 100%;
+      overflow: hidden;
+    }
     body {
       display: flex;
       flex-direction: column;
@@ -40,9 +45,9 @@
       flex-shrink: 0;
       display: flex;
       flex-wrap: wrap;
-      align-items: flex-end;
-      gap: 10px 18px;
-      padding: 14px 18px 12px;
+      align-items: center;
+      gap: 8px 16px;
+      padding: 10px 16px;
       border-bottom: 1px solid var(--line);
       background: linear-gradient(180deg, #1a1720 0%, var(--bg) 100%);
     }
@@ -56,12 +61,12 @@
     .brand { flex: 1; min-width: 180px; }
     .brand h1 {
       font-family: var(--serif);
-      font-size: 1.35rem;
+      font-size: 1.15rem;
       font-weight: 600;
       letter-spacing: -0.02em;
       line-height: 1.15;
     }
-    .brand p { color: var(--soft); font-size: 0.88rem; margin-top: 3px; }
+    .brand p { color: var(--soft); font-size: 0.82rem; margin-top: 1px; }
     .tools {
       display: flex;
       flex-wrap: wrap;
@@ -89,21 +94,38 @@
       white-space: nowrap;
     }
     .layout {
-      flex: 1;
+      flex: 1 1 auto;
       min-height: 0;
+      height: 100%;
       display: grid;
       grid-template-columns: 1fr minmax(220px, 280px);
     }
     @media (max-width: 760px) {
-      .layout { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
-      aside { max-height: 38vh; border-left: none; border-top: 1px solid var(--line); }
+      .layout { grid-template-columns: 1fr; grid-template-rows: 1fr minmax(180px, 32vh); }
+      aside { max-height: none; border-left: none; border-top: 1px solid var(--line); }
+    }
+    .graph-wrap {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      height: 100%;
+      width: 100%;
     }
     #graph {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
       min-height: 0;
       background:
         radial-gradient(900px 500px at 20% 10%, rgba(109, 40, 217, 0.12) 0%, transparent 55%),
         radial-gradient(700px 400px at 90% 80%, rgba(15, 122, 82, 0.08) 0%, transparent 50%),
         var(--bg);
+    }
+    #graph .vis-network,
+    #graph canvas {
+      width: 100% !important;
+      height: 100% !important;
     }
     aside {
       border-left: 1px solid var(--line);
@@ -201,7 +223,6 @@
       color: var(--faint);
       pointer-events: none;
     }
-    .graph-wrap { position: relative; min-height: 0; }
     #err {
       padding: 24px;
       color: #fb7185;
@@ -322,27 +343,32 @@
     $("graph"),
     { nodes: nodesDS, edges: edgesDS },
     {
+      autoResize: true,
+      height: "100%",
+      width: "100%",
       physics: {
         solver: "forceAtlas2Based",
         forceAtlas2Based: {
-          gravitationalConstant: -38,
-          centralGravity: 0.012,
-          springLength: 95,
-          springConstant: 0.06,
-          damping: 0.45,
-          avoidOverlap: 0.35,
+          gravitationalConstant: -42,
+          centralGravity: 0.008,
+          springLength: 110,
+          springConstant: 0.05,
+          damping: 0.48,
+          avoidOverlap: 0.4,
         },
-        stabilization: { iterations: 180, updateInterval: 25 },
+        stabilization: { iterations: 200, updateInterval: 25, fit: true },
       },
       interaction: {
         hover: true,
         tooltipDelay: 120,
         hideEdgesOnDrag: true,
         multiselect: false,
+        zoomView: true,
+        dragView: true,
       },
       nodes: {
         shape: "dot",
-        scaling: { min: 6, max: 32 },
+        scaling: { min: 8, max: 36 },
       },
       edges: {
         selectionWidth: 2,
@@ -350,12 +376,44 @@
     }
   );
 
+  function fillGraph() {
+    const el = $("graph");
+    if (!el) return;
+    const w = el.clientWidth;
+    const h = el.clientHeight;
+    if (w > 0 && h > 0) {
+      network.setSize(w + "px", h + "px");
+      network.redraw();
+    }
+  }
+
+  function fitAll() {
+    fillGraph();
+    network.fit({
+      animation: false,
+      padding: 28,
+    });
+  }
+
   statsEl.textContent =
     data.node_count + " notes · " + data.edge_count + " links (pruned vault graph)";
 
+  // Size immediately, then again after layout
+  fillGraph();
+  requestAnimationFrame(() => {
+    fillGraph();
+    network.fit({ animation: false, padding: 36 });
+  });
+
   network.once("stabilizationIterationsDone", () => {
     network.setOptions({ physics: { enabled: false } });
-    statusEl.textContent = "Physics settled — drag freely";
+    fitAll();
+    statusEl.textContent = "Full view — scroll to zoom · drag to pan";
+  });
+
+  window.addEventListener("resize", () => {
+    fillGraph();
+    network.fit({ animation: false, padding: 28 });
   });
 
   function showInfo(id) {
