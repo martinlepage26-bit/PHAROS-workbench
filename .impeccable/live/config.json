@@ -1,7 +1,0 @@
-{
-  "files": ["backend/public/**/*.html"],
-  "exclude": ["backend/public/files/**"],
-  "insertBefore": "</body>",
-  "commentSyntax": "html",
-  "cspChecked": true
-}
